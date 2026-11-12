@@ -8,63 +8,112 @@
     <AssemblyName>POGContentLib</AssemblyName>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- The folder that holds MelonLoader\net6 and MelonLoader\Il2CppAssemblies. The default assumes
+         this project sits at <game>\ModSource\POGContentLib; override with -p:GameDir=... (for a Gale
+         profile: -p:GameDir=~/.local/share/com.kesomannen.gale/pit-of-goblin/profiles/Default). -->
+    <GameDir Condition="'$(GameDir)' == ''">$(MSBuildThisFileDirectory)..\..</GameDir>
+    <MelonDir>$(GameDir)\MelonLoader\net6</MelonDir>
+    <InteropDir>$(GameDir)\MelonLoader\Il2CppAssemblies</InteropDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- tests/ holds separate projects (runtime driver, unit tests); keep their sources out of the library. -->
+    <Compile Remove="tests/**" />
+    <Compile Remove="samples/**" />
+    <None Remove="tests/**" />
+    <None Remove="samples/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="MelonLoader">
-      <HintPath>..\..\MelonLoader\net6\MelonLoader.dll</HintPath>
+      <HintPath>$(MelonDir)\MelonLoader.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>..\..\MelonLoader\net6\0Harmony.dll</HintPath>
+      <HintPath>$(MelonDir)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>..\..\MelonLoader\net6\Il2CppInterop.Runtime.dll</HintPath>
+      <HintPath>$(MelonDir)\Il2CppInterop.Runtime.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2Cppmscorlib">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\Il2Cppmscorlib.dll</HintPath>
+      <HintPath>$(InteropDir)\Il2Cppmscorlib.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\UnityEngine.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- ParticleSystem: read by VisualProbe when reporting an item's glow/pulse setup. -->
     <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.ParticleSystemModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(InteropDir)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.Netcode.Runtime">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\Unity.Netcode.Runtime.dll</HintPath>
+      <HintPath>$(InteropDir)\Unity.Netcode.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- IMGUI + legacy input + physics raycasts: the shop dev tools. -->
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(InteropDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(InteropDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(InteropDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(InteropDir)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- TextMeshPro: shop price tags (ShopLocation.m_priceTagText). -->
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(InteropDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(InteropDir)\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.Collections">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\Unity.Collections.dll</HintPath>
+      <HintPath>$(InteropDir)\Unity.Collections.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- Steam lobby metadata: the channel the multiplayer parity layer uses. -->
     <Reference Include="Il2CppFacepunch.Steamworks.Win64">
-      <HintPath>..\..\MelonLoader\Il2CppAssemblies\Il2CppFacepunch.Steamworks.Win64.dll</HintPath>
+      <HintPath>$(InteropDir)\Il2CppFacepunch.Steamworks.Win64.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Game.Platform.SteamRuntimeManager (lobby callbacks the parity layer patches). The game moved
+         it out of Assembly-CSharp into its own SteamCommon assembly in the 2026-11-06 update. -->
+    <Reference Include="Il2CppSteamCommon">
+      <HintPath>$(InteropDir)\Il2CppSteamCommon.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

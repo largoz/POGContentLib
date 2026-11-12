@@ -38,7 +38,12 @@ namespace POGContentLib.Core
             }),
             // Capability components (EXPERIMENTAL attach API) — scalar fields the Lib sets.
             (typeof(ActiveItem_Eat), new[]
-                { "m_healthOnEating", "m_damageOnEating", "m_staminaRefill", "m_minStaminaBonus", "m_maxStaminaBonus", "m_stomachFullTime" }),
+            {
+                "m_healthOnEating", "m_damageOnEating", "m_staminaRefill", "m_minStaminaBonus", "m_maxStaminaBonus",
+                "m_stomachFullTime", "m_useStaminaMin", "m_eatVfx",
+                // 2026-11-06 food rework: stats and buffs instead of hunger.
+                "m_bodyValue", "m_staminaValue", "m_strengthValue", "m_applyBuff", "m_buffValueToAdd", "m_buffValueToStart",
+            }),
             (typeof(ActiveItem_MeleeWeapon), new[]
                 { "m_maxDurability", "m_durabilityLossOnEntityHit", "m_durabilityLossOnDestructibleHit", "m_meleeHitCooldown" }),
             (typeof(ActiveItem_Throwable), new[] { "m_healthMax", "m_healthMin", "m_bounceFactor" }),
@@ -73,11 +78,50 @@ namespace POGContentLib.Core
                 { GameNames.Steam.Lobby_SetData, GameNames.Steam.Lobby_GetData }),
         };
 
+        // Types this DLL references at compile time. A game update can MOVE a type to another assembly or
+        // nest/un-nest it while keeping every member name: the by-name checks above still pass, but the
+        // DLL's compiled references no longer resolve and whatever touches them fails later (2026-11-06:
+        // SteamRuntimeManager moved to the SteamCommon assembly, MapIconType moved out of PassiveItem_Map;
+        // the old build said "Compatibility OK" and then three patches failed). Each lambda is its own
+        // method, so the runtime resolves its type when the lambda is first called, and a broken reference
+        // surfaces here as one exception per type.
+        private static readonly (string name, Func<Type> touch)[] CompiledBindings =
+        {
+            ("InventoryItem", () => typeof(InventoryItem)),
+            ("ActiveItem_Eat", () => typeof(ActiveItem_Eat)),
+            ("ActiveItem_MeleeWeapon", () => typeof(ActiveItem_MeleeWeapon)),
+            ("ActiveItem_Throwable", () => typeof(ActiveItem_Throwable)),
+            ("ActiveItem_ReadyItem", () => typeof(ActiveItem_ReadyItem)),
+            ("MapIconType", () => typeof(MapIconType)),
+            ("ItemType", () => typeof(ItemType)),
+            ("LootTable", () => typeof(LootTable)),
+            ("InventoryLootTable", () => typeof(InventoryLootTable)),
+            ("ItemContainer", () => typeof(ItemContainer)),
+            ("ShopLocation", () => typeof(ShopLocation)),
+            ("NpcSpawner", () => typeof(NpcSpawner)),
+            ("SpeakingStone", () => typeof(SpeakingStone)),
+            ("LocalizationManager", () => typeof(LocalizationManager)),
+            ("SteamRuntimeManager", () => typeof(Il2CppGame.Platform.SteamRuntimeManager)),
+            ("NetworkManager", () => typeof(NetworkManager)),
+        };
+
         /// <summary>Check all expected members; log a clear warning listing any that are missing.</summary>
         public static void Check()
         {
             var missing = new StringBuilder();
             int miss = 0, total = 0;
+
+            foreach (var (name, touch) in CompiledBindings)
+            {
+                total++;
+                try { if (touch() == null) throw new TypeLoadException("resolved to null"); }
+                catch (Exception ex)
+                {
+                    miss++;
+                    missing.Append($"\n  - compiled reference to {name} does not resolve ({ex.GetType().Name}: {ex.Message}) " +
+                                   "— the game moved or changed this type; this DLL must be rebuilt against the current game");
+                }
+            }
             foreach (var (type, members) in Expected)
             {
                 foreach (var m in members)

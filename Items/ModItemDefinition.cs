@@ -122,8 +122,9 @@ namespace POGContentLib.Items
         //   minimap marker — a SEPARATE field. Set these or the item mis-routes / has no map marker. —
         /// <summary>Inventory slot filter ([Flags]). Item=generic, Treasure=gems, Food, Weapon, Key.</summary>
         public ItemType ItemType { get; set; } = ItemType.Item;
-        /// <summary>Minimap marker. Default/Food/Treasure/… (nested enum PassiveItem_Map.MapIconType).</summary>
-        public PassiveItem_Map.MapIconType MapIcon { get; set; } = PassiveItem_Map.MapIconType.Default;
+        /// <summary>Minimap marker: Default, Player, Enemy, Food, Treasure, Crumb, Door, NPC (enum
+        /// <c>Il2Cpp.MapIconType</c>; before the 2026-11-06 game update it was nested in PassiveItem_Map).</summary>
+        public MapIconType MapIcon { get; set; } = MapIconType.Default;
 
         // — Numeric properties. Also the drop-weight knobs in the value-budget loot spawner (§5). —
         /// <summary>Loot budget / treasure value (matched against LootValueTable_Gold levels).</summary>
@@ -165,5 +166,16 @@ namespace POGContentLib.Items
 
         // — Natural drops (optional) —
         public LootPlacement Loot { get; set; }
+
+        // — How the item stands on a shop counter —
+        /// <summary>
+        /// The point of the item that a shop slot puts on its holder (the game's
+        /// <c>InventoryItem.m_standingTransform</c>), in the item's local space. Null = keep the shell's own,
+        /// or, when the shell has none, the bottom centre of the item's mesh, so it stands ON the counter.
+        /// A shop file's "items" section can override it too (that is what the shop tools write).
+        /// </summary>
+        public UnityEngine.Vector3? StandingPoint { get; set; }
+        /// <summary>Rotation of the standing point, in degrees (null = unchanged).</summary>
+        public UnityEngine.Vector3? StandingRotation { get; set; }
     }
 }

@@ -188,30 +188,111 @@ namespace POGContentLib.Items
         }
     }
 
-    /// <summary>Edible: restores health/stamina when eaten (component <c>ActiveItem_Eat</c>).</summary>
+    /// <summary>
+    /// Edible (component <c>ActiveItem_Eat</c>). Since the 2026-11-06 game update food no longer fills a
+    /// hunger meter: it heals, refills stamina, raises the character's stats (Body / Stamina / Strength,
+    /// see <c>PlayerStats</c>) and can apply a buff.
+    ///
+    /// Not every vanilla food uses this component: bread is ActiveItem_Bread (it leaves crumbs), drinks are
+    /// ActiveItem_Drink. Plain foods such as Item_Apple, Item_Orange, Item_Cheese and Item_Meat use it.
+    ///
+    /// Every setting is optional. <see cref="CopyFrom"/> starts from a vanilla food item — all of its
+    /// eat settings, including its buff and eating VFX, which a bare shell does not have — and the values
+    /// you set override it. Without <see cref="CopyFrom"/>, unset values stay at the component's defaults
+    /// (zero / off), which is what earlier versions of this class did with its zero defaults.
+    /// </summary>
     public sealed class EatCapability : ItemCapability
     {
-        public float HealthOnEating = 0f;
-        public float DamageOnEating = 0f;
-        public float StaminaRefill = 0f;
-        public float MinStaminaBonus = 0f;
-        public float MaxStaminaBonus = 0f;
-        public float StomachFullTime = 0f;
-        public bool UseStaminaMin = false;
+        /// <summary>Vanilla food prefab to start from, e.g. "Item_Mushroom_Normal" (null = start empty).</summary>
+        public string CopyFrom;
+
+        public float? HealthOnEating;
+        public float? DamageOnEating;
+        public float? StaminaRefill;
+        public float? MinStaminaBonus;
+        public float? MaxStaminaBonus;
+        public float? StomachFullTime;
+        public bool? UseStaminaMin;
+
+        /// <summary>Points added to the Body stat (more max health) when eaten.</summary>
+        public int? BodyValue;
+        /// <summary>Points added to the Stamina stat when eaten (not the same as <see cref="StaminaRefill"/>).</summary>
+        public int? StaminaValue;
+        /// <summary>Points added to the Strength stat (more damage) when eaten.</summary>
+        public int? StrengthValue;
+
+        /// <summary>
+        /// Apply the buff of this vanilla food item, e.g. "Item_Mushroom_Glowing" (the buff object lives on
+        /// that item's ActiveItem_Eat). Overrides the buff taken from <see cref="CopyFrom"/>.
+        /// </summary>
+        public string BuffFrom;
+        public float? BuffValueToAdd;
+        public float? BuffValueToStart;
 
         public override string Name => "ActiveItem_Eat";
 
         public override void Attach(InventoryItem item)
         {
             var eat = AddOrGet<ActiveItem_Eat>(item.gameObject);
-            eat.m_healthOnEating = HealthOnEating;
-            eat.m_damageOnEating = DamageOnEating;
-            eat.m_staminaRefill = StaminaRefill;
-            eat.m_minStaminaBonus = MinStaminaBonus;
-            eat.m_maxStaminaBonus = MaxStaminaBonus;
-            eat.m_stomachFullTime = StomachFullTime;
-            eat.m_useStaminaMin = UseStaminaMin;
-            // m_eatVfx (VFX) is left null — a bare shell has none; EatVfxRpc may no-op (RUNTIME-TODO).
+
+            if (!string.IsNullOrEmpty(CopyFrom))
+            {
+                var donor = FindVanillaEat(CopyFrom);
+                if (donor != null) CopySettings(donor, eat);
+                else MelonLogger.Warning($"[POGContentLib] EatCapability: CopyFrom '{CopyFrom}' unavailable; starting empty.");
+            }
+
+            if (HealthOnEating.HasValue) eat.m_healthOnEating = HealthOnEating.Value;
+            if (DamageOnEating.HasValue) eat.m_damageOnEating = DamageOnEating.Value;
+            if (StaminaRefill.HasValue) eat.m_staminaRefill = StaminaRefill.Value;
+            if (MinStaminaBonus.HasValue) eat.m_minStaminaBonus = MinStaminaBonus.Value;
+            if (MaxStaminaBonus.HasValue) eat.m_maxStaminaBonus = MaxStaminaBonus.Value;
+            if (StomachFullTime.HasValue) eat.m_stomachFullTime = StomachFullTime.Value;
+            if (UseStaminaMin.HasValue) eat.m_useStaminaMin = UseStaminaMin.Value;
+            if (BodyValue.HasValue) eat.m_bodyValue = BodyValue.Value;
+            if (StaminaValue.HasValue) eat.m_staminaValue = StaminaValue.Value;
+            if (StrengthValue.HasValue) eat.m_strengthValue = StrengthValue.Value;
+
+            if (!string.IsNullOrEmpty(BuffFrom))
+            {
+                var donor = FindVanillaEat(BuffFrom);
+                if (donor != null && donor.m_applyBuff != null)
+                {
+                    eat.m_applyBuff = donor.m_applyBuff;
+                    eat.m_buffValueToAdd = donor.m_buffValueToAdd;
+                    eat.m_buffValueToStart = donor.m_buffValueToStart;
+                }
+                else MelonLogger.Warning($"[POGContentLib] EatCapability: BuffFrom '{BuffFrom}' has no buff (or is not a loaded food item).");
+            }
+            if (BuffValueToAdd.HasValue) eat.m_buffValueToAdd = BuffValueToAdd.Value;
+            if (BuffValueToStart.HasValue) eat.m_buffValueToStart = BuffValueToStart.Value;
+        }
+
+        private static ActiveItem_Eat FindVanillaEat(string prefabName)
+        {
+            var prefab = GameAssets.FindItemPrefab(prefabName);
+            if (prefab == null) { MelonLogger.Warning($"[POGContentLib] EatCapability: no item prefab named '{prefabName}' is loaded yet."); return null; }
+            var eat = prefab.GetComponentInChildren<ActiveItem_Eat>(true);
+            if (eat == null) MelonLogger.Warning($"[POGContentLib] EatCapability: '{prefabName}' is loaded but has no ActiveItem_Eat (not a food item).");
+            return eat;
+        }
+
+        private static void CopySettings(ActiveItem_Eat from, ActiveItem_Eat to)
+        {
+            to.m_healthOnEating = from.m_healthOnEating;
+            to.m_damageOnEating = from.m_damageOnEating;
+            to.m_staminaRefill = from.m_staminaRefill;
+            to.m_minStaminaBonus = from.m_minStaminaBonus;
+            to.m_maxStaminaBonus = from.m_maxStaminaBonus;
+            to.m_stomachFullTime = from.m_stomachFullTime;
+            to.m_useStaminaMin = from.m_useStaminaMin;
+            to.m_bodyValue = from.m_bodyValue;
+            to.m_staminaValue = from.m_staminaValue;
+            to.m_strengthValue = from.m_strengthValue;
+            to.m_applyBuff = from.m_applyBuff;
+            to.m_buffValueToAdd = from.m_buffValueToAdd;
+            to.m_buffValueToStart = from.m_buffValueToStart;
+            to.m_eatVfx = from.m_eatVfx;
         }
     }
 

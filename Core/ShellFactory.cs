@@ -60,6 +60,22 @@ namespace POGContentLib.Core
         /// deterministic hash. Visual/identity are applied separately by the domain module.
         /// Returns null if the shell is not in memory yet (retry on the next scene load).
         /// </summary>
+        private static GameObject _templateHolder;
+
+        /// <summary>Inactive, DontDestroyOnLoad parent of every item template (see BuildItemTemplate).</summary>
+        internal static GameObject TemplateHolder
+        {
+            get
+            {
+                if (_templateHolder != null) return _templateHolder;
+                _templateHolder = new GameObject("POGContentLib_ItemTemplates");
+                _templateHolder.SetActive(false);
+                UnityEngine.Object.DontDestroyOnLoad(_templateHolder);
+                _templateHolder.hideFlags = HideFlags.HideAndDontSave;
+                return _templateHolder;
+            }
+        }
+
         public InventoryItem BuildItemTemplate(ItemShellKind shellKind, string modId, string contentId)
         {
             string shellName = ShellPrefabName(shellKind);
@@ -70,9 +86,12 @@ namespace POGContentLib.Core
                 return null;
             }
 
-            var go = UnityEngine.Object.Instantiate(shell.gameObject);
-            go.SetActive(false);
-            UnityEngine.Object.DontDestroyOnLoad(go);
+            // The template stays ACTIVE under one INACTIVE holder. A template that is itself inactive makes
+            // every copy the game instantiates from it (shop stock, loot) inactive too — invisible, found
+            // 2026-11-12 when a shop slot stocked with a mod item showed nothing. Under the holder the
+            // template never runs (no Awake: before, Awake ran on the clone before SetActive(false)), while
+            // a copy made by Instantiate is a root object and active at once.
+            var go = UnityEngine.Object.Instantiate(shell.gameObject, TemplateHolder.transform);
             go.hideFlags = HideFlags.HideAndDontSave;
             go.name = $"ModItem_{modId}_{contentId}";
 

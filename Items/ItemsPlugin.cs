@@ -97,6 +97,7 @@ namespace POGContentLib.Items
             ApplyIdentity(template, def);
             ApplyVisual(template, def);
             ApplyCapabilities(template, def);
+            StandingPoints.Ensure(template, def.StandingPoint, def.StandingRotation);
             template.gameObject.AddComponent<ModItemHandle>();
 
             // Request a natural drop (executed host-side by LootInjector).
