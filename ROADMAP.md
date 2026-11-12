@@ -51,6 +51,10 @@ Framework skeleton compiles clean; correctness of the runtime paths pending Mile
 - [~] **Minimal parity layer (multiplayer PRECONDITION, promoted from v0.2) — SCAFFOLDED, compiles.**
       Because `ForceSamePrefabs=TRUE`, mismatched content packs make co-op joins fail with an opaque
       "connection failed". The Lib does this self-sufficiently (no other mod required):
+    - [ ] **2026-11-12, seen in every hosted test session: no Steam lobby callback fires**, so the log says
+          "Parity/Steam bridge unavailable" and parity is off. The game hosts through an EOS lobby now
+          (`NetworkHandler.m_onlineService` / `ServicesEOS`, see POGPlayerLimit's probe); move the manifest to
+          EOS lobby attributes.
     - [x] `ParityManifest` — deterministic, order-independent snapshot of registered content
           (`modId:contentId@version` + an 8-hex token); versioned wire format; pure logic, no game dep.
     - [x] `ParityService` — host advertises the manifest, a joining client reads and compares the
@@ -79,26 +83,22 @@ Framework skeleton compiles clean; correctness of the runtime paths pending Mile
 - [ ] Loose-file tier polish: PNG icons, OGG audio, OBJ meshes (no Unity Editor needed).
 - [ ] `HostBridge` client→host use requests via `CustomMessagingManager` named messages
       (so non-host players can trigger item effects).
-- [ ] **Shop slots & vendors** — a slot is NOT a hard-wired list entry. Each `ShopLocation` is an
-      independent placed component = a *position* (`m_itemHolder`) + a price tag (`m_currentPrice`)
-      + one item (fixed `m_networkPrefab` **or** a random draw from `m_lootTable`). So a slot can be
-      positioned anywhere by cloning/placing a `ShopLocation`. Planned:
-    - [ ] **Enumerate every vendor & slot** and capture their ids/references: hub/starting shops
-          (~55 in the lobby) plus the *level* merchants — random-stock vendors that spawn
-          probabilistically per run (entrance-cave / dungeon-event merchants; a mini-location that
-          may or may not appear). Their stock is a random `InventoryLootTable`, so **new items can
-          already be injected** into those pools via `LootPlacement.InTables(...)`.
-    - [~] **`ShopPlacement` API — scaffolded (`Content.Shops.PlaceRandomSlot`), EXPERIMENTAL.**
-          Clones a live `ShopLocation`, builds an `InventoryLootTable` pool from registered mod
-          items, sets `m_lootTable`, assigns a deterministic hash, positions it and host-spawns.
-          Price comes from each pool item's `ShopCost` (auto → `m_currentPrice` → label). Compiles;
-          two runtime unknowns remain (RUNTIME-TODO in `ShopFactory.cs`): registration timing under
-          `ForceSamePrefabs=TRUE`, and whether the cloned scene-`NetworkObject` + `m_priceTagText`
-          replicate/rebind. Validate in a 2-player game. Injecting into EXISTING random pools
-          (Curiosa/gambling) already works today via `LootPlacement.InTables`.
-    - [ ] Confirm the "one `ShopLocation` = one slot, no count field" finding in-game (the item is
-          bound to the place + gets a price tag — user's model; matches the static decompilation).
-      (Shop/vendor internals are mapped in the project's item-system research notes, §7–§8.)
+- [x] **Shops module** (`Shops/`, design `docs/design/shops.md`, guide `SHOPS.md`, sample `samples/ShopDemo/`) —
+      2026-11-12, checked in the real game through `tests/RuntimeDriver` (single player, host):
+    - [x] Shop files (`pogshop.json`, format 1): parse with exact errors, typo warnings; unit-tested
+          (`tests/Shops.Tests`, mutation-calibrated).
+    - [x] Weights instead of percentages; add / patch (patch needs `requires`); dependency order; per-slot
+          "who changed what" history.
+    - [x] Rules on vanilla slots: the host picks by weight and hands the game a fixed item. In game: a mod
+          item and a vanilla item into fixed and pool slots, priced, linked to the slot, faction kept.
+    - [x] New slots next to any seller (network prefab per slot, built before the session). In game: placed,
+          stocked, priced, sold by the seller with its faction.
+    - [x] Standing points (`m_standingTransform`, what the game really uses; `TableGrip` is not) for mod items.
+    - [x] Dungeon merchants as weighted variants of a vanilla preset (no new prefab).
+    - [x] In-game shop tools: aim + place, nudge, panel with chances/history/items, Save, round-timer freeze
+          (in game: frozen 8 s → elapsed +0.00), scene jumps (in game: Lobby → InBetween → DarkBurg).
+    - [ ] Two-player test: new slots and merchant stock on a client (needs two machines).
+    - [ ] Shop files in the multiplayer parity manifest (the parity layer itself needs the EOS lobby, below).
 - [~] **Item capabilities — SCAFFOLDED, compiles.** Declarative `ItemCapability` on a definition
       attaches the sibling `ActiveItem_*` component and sets its scalar fields (item anatomy §2).
     - [x] `EatCapability` (health/stamina/satiety), `MeleeWeaponCapability` (durability + hit),

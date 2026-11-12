@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Example content pack for the Shops module: one item + a pogshop.json. Ship ShopDemo.dll in Mods/
+       and pogshop.json in Mods/<Author>-ShopDemo/ (see SHOPS.md). -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>ShopDemo</AssemblyName>
+    <GameDir Condition="'$(GameDir)' == ''">$(HOME)/.local/share/com.kesomannen.gale/pit-of-goblin/profiles/Default</GameDir>
+    <MelonDir>$(GameDir)\MelonLoader\net6</MelonDir>
+    <InteropDir>$(GameDir)\MelonLoader\Il2CppAssemblies</InteropDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="POGContentLib"><HintPath>../../bin/Release/net6.0/POGContentLib.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MelonLoader"><HintPath>$(MelonDir)\MelonLoader.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2CppInterop.Runtime"><HintPath>$(MelonDir)\Il2CppInterop.Runtime.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2Cppmscorlib"><HintPath>$(InteropDir)\Il2Cppmscorlib.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(InteropDir)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Assembly-CSharp"><HintPath>$(InteropDir)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="pogshop.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

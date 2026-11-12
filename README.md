@@ -19,6 +19,7 @@ POGContentLib.dll
 │   ├── AssetLoader             — AssetBundle + loose PNG → Sprite
 │   └── HostBridge              — client→host via CustomMessagingManager (v2)
 ├── Items/                    ← domain module v1 (current)
+├── Shops/                    ← sell items: shop files, weights, new slots, merchants, in-game tools
 ├── Mobs/                     ← v3 (planned)
 ├── Levels/                   ← v4 (planned)
 └── Effects/                  ← stretch
@@ -57,7 +58,7 @@ public override void OnInitializeMelon()
         ContentId = "HealingBerry",
         ShellKind = ShellFactory.ItemShellKind.Diamond, // safe default shell
         ItemType = Il2Cpp.ItemType.Food,                // inventory slot routing (§2)
-        MapIcon  = Il2Cpp.PassiveItem_Map.MapIconType.Food, // minimap marker (separate field)
+        MapIcon  = Il2Cpp.MapIconType.Food,             // minimap marker (separate field)
         GoldValue = 40,   // loot budget
         FoodValue = 3,    // satiety
         ShopCost  = 8,    // shop price (decoupled from gold)
@@ -93,6 +94,14 @@ Loot = LootPlacement.InTables("GamblingWheelSurprise")                 // gambli
 Injection is host-side at scene load, before dungeon generation. **Do not** target reward-chest
 tables (`DT_BonusChest_*`) casually — a removed mod then NREs on save restore; the framework's
 `SaveGuard` catches it, but keeping mod items out of persisted reward chests is safer.
+
+### Selling items in shops
+
+Give the item a `ShopCost`, then describe where it is sold in a `pogshop.json` next to your mod — no shop
+code. Chances are weights, so any number of mods can share a slot; you can add new slots next to any
+seller and new dungeon merchants. The in-game shop tools (preference `[POGContentLib_ShopTools] Enabled`,
+then F7 while hosting alone) place slots by aiming and write the file. Full guide: [`SHOPS.md`](SHOPS.md);
+example: `samples/ShopDemo/`.
 
 ## Key technical decisions
 

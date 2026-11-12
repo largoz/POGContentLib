@@ -17,7 +17,6 @@ namespace POGContentLib.Core
         public static AssetLoader Assets { get; private set; }
         public static HostBridge Bridge { get; private set; }
         public static LootInjector Loot { get; private set; }
-        public static ShopFactory Shops { get; private set; }
 
         private static bool _init;
 
@@ -32,7 +31,6 @@ namespace POGContentLib.Core
             Assets = new AssetLoader();
             Bridge = new HostBridge();
             Loot = new LootInjector(Content);
-            Shops = new ShopFactory(Content);
 
             MelonLogger.Msg("[POGContentLib] Core services initialized.");
         }

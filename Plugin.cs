@@ -48,6 +48,7 @@ namespace POGContentLib
 
             // 4) Built-in domain plugins (each is a separate module).
             PluginRegistry.Add(new ItemsPlugin());
+            PluginRegistry.Add(new POGContentLib.Shops.ShopsPlugin());
             // TODO(v2): PluginRegistry.Add(new MobsPlugin());
             // TODO(v3): PluginRegistry.Add(new LevelsPlugin());
 
@@ -59,6 +60,9 @@ namespace POGContentLib
             //    which once cost us every patch in the assembly because of one bad parameter name.
             //    Isolating them means a single incompatible patch degrades that one feature only.
             PatchEachClassIndependently();
+
+            // 7) In-game shop tools (off unless [POGContentLib_ShopTools] Enabled = true).
+            POGContentLib.Shops.Dev.ShopDevTools.Init();
 
             MelonLogger.Msg("[POGContentLib] Boot done. Waiting for scene + session.");
         }
@@ -94,6 +98,10 @@ namespace POGContentLib
             if (failed == 0) MelonLogger.Msg($"[POGContentLib] Harmony: {ok} patch class(es) applied.");
             else MelonLogger.Warning($"[POGContentLib] Harmony: {ok} applied, {failed} FAILED (those features are off; the rest work).");
         }
+
+        public override void OnUpdate() => POGContentLib.Shops.Dev.ShopDevTools.OnUpdate();
+
+        public override void OnGUI() => POGContentLib.Shops.Dev.ShopDevTools.OnGUI();
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
