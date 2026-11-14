@@ -1,0 +1,20 @@
+# Read by run.sh after the game closes, against MelonLoader's Latest.log. One extended regex per line:
+#   ERE       must appear
+#   !ERE      must not appear
+#   =N ERE    must appear on exactly N lines
+# Silent failures (ROADMAP "Pre-release gate"): each mistake in shops/DriverChecks.json is reported.
+\[Shops\] item 'DriverChecks:NoSuchItem' \(.*\) is not loaded
+\[Shops\] item 'DriverChecks:FreeThing' \(.*\) has ShopCost 0
+rules target slot 'DriverChecks:nosuchslot', which 'DriverChecks' does not define
+slot 'vanilla:PitOfGoblin_Lobby/StarterShop/Game\.Spawning\.ShopLocation Item_Breadd' is not in PitOfGoblin_Lobby
+Closest slot ids here: vanilla:PitOfGoblin_Lobby/StarterShop/Game\.Spawning\.ShopLocation Item_Bread( \||\.)
+# The player setting is read when the next scene loads.
+vanilla weight 0 \(player setting\)
+# The sample's new slot is still placed and stocked once; the vanilla slot is rolled once although
+# OnNetworkSpawn runs more than once (G3).
+placed ShopDemo:berry_stand
+=1 \[Shops\] ShopDemo:berry_stand: [a-zA-Z]
+=1 \[Shops\] vanilla:PitOfGoblin_Lobby/StarterShop/Game\.Spawning\.ShopLocation Item_Bread: [a-zA-Z]
+!stocking failed
+# The driver's own PASS/FAIL lines are counted by run.sh; this one proves it got to the end.
+\[DRIVER\] checks: [0-9]+ pass, [0-9]+ fail

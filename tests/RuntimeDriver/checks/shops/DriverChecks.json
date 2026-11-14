@@ -1,0 +1,12 @@
+{
+  // Rules with mistakes on purpose: each one must produce its own log line (see ../expect.txt).
+  "format": 1,
+  "mod": "DriverChecks",
+  "add": [
+    { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Bread", "item": "vanilla:Item_Apple", "weight": 1 },
+    { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Bread", "item": "NoSuchItem", "weight": 1 },
+    { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Bread", "item": "FreeThing", "weight": 1 },
+    { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Breadd", "item": "vanilla:Item_Apple", "weight": 1 },
+    { "slot": "nosuchslot", "item": "vanilla:Item_Apple", "weight": 1 }
+  ]
+}

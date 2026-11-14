@@ -17,8 +17,12 @@ LOG="$PROFILE/MelonLoader/Latest.log"
 MODS="$PROFILE/Mods"
 CFG="$PROFILE/UserData/POGContentLib/driver.txt"
 TIMEOUT="${POG_TIMEOUT:-420}"
+START_WAIT="${POG_START_WAIT:-300}"
 
 if pgrep -x 'Pit of Goblin.e' >/dev/null; then echo "game already running (the user may be playing): abort"; exit 1; fi
+# Without a running Steam, -applaunch starts Steam and launches the game whenever the login finishes,
+# possibly after this script has given up and removed its files (seen 2026-11-14).
+if ! pgrep -f 'steamrt64/steam|ubuntu12_32/steam' >/dev/null; then echo "Steam is not running: start it (logged in) first: abort"; exit 1; fi
 mkdir -p "$OUT"
 
 deployed=()
@@ -30,6 +34,25 @@ deploy() {   # atomic copy into Mods/, remembered for removal
 cleanup() {
   local gp; gp=$(pgrep -x 'Pit of Goblin.e'); [ -n "$gp" ] && kill $gp
   for _ in $(seq 1 20); do pgrep -x 'Pit of Goblin.e' >/dev/null || break; sleep 1; done
+  # A launch that hung before the game process (or outlived it) keeps Steam's reaper, Proton and wineserver
+  # alive, and Steam then treats the game as running and refuses the next launch (2026-11-14). The reaper
+  # takes the rest of the tree with it.
+  local rp; rp=$(pgrep -f "reaper SteamLaunch AppId=3253530 ")
+  if [ -n "$rp" ]; then
+    kill $rp
+    for _ in $(seq 1 20); do pgrep -f "reaper SteamLaunch AppId=3253530 " >/dev/null || break; sleep 1; done
+    pgrep -f "reaper SteamLaunch AppId=3253530 " >/dev/null && echo "reaper still running" || echo "reaper closed"
+  fi
+  # What the reaper left (on 2026-11-14 wineserver, services.exe and steam.exe outlived it): every process
+  # Steam started for this game carries SteamGameId=3253530 in its environment.
+  local left=()
+  for p in /proc/[0-9]*; do
+    [ "${p#/proc/}" = "$$" ] && continue
+    { tr '\0' '\n' < "$p/environ"; } 2>/dev/null | grep -qx 'SteamGameId=3253530' && left+=("${p#/proc/}")
+  done
+  if [ ${#left[@]} -gt 0 ]; then
+    echo "killing ${#left[@]} leftover process(es) of the launch"; kill "${left[@]}" 2>/dev/null; sleep 3
+  fi
   pgrep -x 'Pit of Goblin.e' >/dev/null && echo "game still running" || echo "game closed"
   for f in "${deployed[@]}"; do rm -rf "$f"; done
   rm -f "$CFG"
@@ -49,7 +72,8 @@ if [ -d "$OUT/shops" ]; then mkdir -p "$SHOPS_DIR"; for f in "$OUT"/shops/*.json
 sha256sum "$ROOT/bin/Release/net6.0/POGContentLib.dll" "$MODS/POGContentLib.dll" | awk '{print $1}' | uniq -c
 
 T0=$(date +%s)
-(setsid steam -applaunch 3253530 --melonloader.basedir "Z:$PROFILE" >/dev/null 2>&1 &)
+# POG_LAUNCH_ARGS: extra game arguments, e.g. "--melonloader.hideconsole" (split on spaces).
+(setsid steam -applaunch 3253530 --melonloader.basedir "Z:$PROFILE" ${POG_LAUNCH_ARGS:-} >/dev/null 2>&1 &)
 WIN=""
 seen=" "
 while true; do
@@ -65,8 +89,21 @@ while true; do
     done < <(grep -a -o "\[DRIVER\] shot [A-Za-z0-9_-]*" "$LOG" | awk '{print $3}')
     grep -a -q "\[DRIVER\] done" "$LOG" && break
   fi
-  if [ $((now - T0)) -gt 30 ] && ! pgrep -x 'Pit of Goblin.e' >/dev/null; then echo "game process gone"; break; fi
+  # Proton may prepare for minutes before the game process exists (first launch after a game or Proton
+  # update: 2026-11-14, over 90 s); MelonLoader then regenerates its assemblies inside the process.
+  if [ $((now - T0)) -gt "$START_WAIT" ] && ! pgrep -x 'Pit of Goblin.e' >/dev/null; then echo "game process gone (or never started within $START_WAIT s)"; break; fi
   sleep 1
 done
-cp "$LOG" "$OUT/Latest.log" 2>/dev/null
-grep -a -E "\[DRIVER\]|POGContentLib|\[Shops\]|ERROR|Exception" "$LOG" | cut -c1-300
+rm -f "$OUT/Latest.log"
+# Only a log written by this run counts: an older one would pass every check it happens to contain.
+if [ ! -f "$LOG" ] || [ "$(stat -c %Y "$LOG")" -lt "$T0" ]; then
+  echo "no log from this run (Latest.log is from $(date -r "$LOG" '+%F %T' 2>/dev/null || echo never)): nothing checked"
+  exit 100
+fi
+cp "$LOG" "$OUT/Latest.log"
+grep -a -E "\[DRIVER\]|POGContentLib|\[Shops\]|ERROR|Exception" "$LOG" | grep -a -v "\[DRIVER\] G2 prefab" | cut -c1-300
+
+# Expectations (<out dir>/expect.txt, see expect.sh) and the driver's own FAIL lines.
+# Exit status = number of failures (0 = all passed).
+"$HERE/expect.sh" "$OUT/Latest.log" "$OUT/expect.txt"
+exit $?

@@ -55,6 +55,20 @@ namespace POGContentLib.RuntimeDriver
                 Log("config: " + string.Join(", ", _cfg.Select(kv => kv.Key + "=" + kv.Value)));
             }
             catch (Exception ex) { Log("config read FAILED " + ex.Message); }
+            Checks.Enabled = Cfg("checks", 0) == 1;
+            if (Checks.Enabled) Checks.RegisterTestItems();
+        }
+
+        // Every way out ends with the player's setting back at its default and the check count.
+        void Finish(string how)
+        {
+            if (Checks.Enabled)
+            {
+                Checks.SetVanillaWeight(10);
+                Log("checks: " + Checks.Summary);
+            }
+            _step = Step.Done;
+            Log(how);
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName) =>
@@ -75,8 +89,8 @@ namespace POGContentLib.RuntimeDriver
             catch (Exception ex)
             {
                 Log($"step {_step} FAILED {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
-                _step = Step.Done;
-                Log("done (failed)");
+                if (Checks.Enabled) Checks.Check("driver steps", false, $"step {_step} threw");
+                Finish("done (failed)");
             }
         }
 
@@ -90,6 +104,7 @@ namespace POGContentLib.RuntimeDriver
                     if (menu == null || menu.m_currentState == null) { _next = Time.unscaledTime + 1f; return; }
                     if (menu.m_currentState.TryCast<NetworkMenuMainState>() == null) { _next = Time.unscaledTime + 1f; return; }
                     Log($"main menu up; login {menu.m_currentLoginState}; {Role()}");
+                    if (Checks.Enabled) Checks.SetVanillaWeight(0);   // must reach the hub's picks: the next scene load
                     _step = Step.OpenSaves; _next = Time.unscaledTime + 3f;
                     return;
 
@@ -159,6 +174,7 @@ namespace POGContentLib.RuntimeDriver
                 case Step.Checks:
                     if (Cfg("dump", 1) == 1) DumpShops();
                     CheckShopRules();
+                    if (Checks.Enabled) { Checks.DumpNetworkPrefabs(); Checks.HubChecks(); }
                     LogStandingPoints();
                     _looks = (_cfg.TryGetValue("look", out var l) ? l : "").Split(';', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
                     _step = Step.Look; _next = Time.unscaledTime + 1f;
@@ -191,8 +207,7 @@ namespace POGContentLib.RuntimeDriver
                     return;
 
                 case Step.Stay:
-                    _step = Step.Done;
-                    Log("done");
+                    Finish("done");
                     return;
             }
         }
