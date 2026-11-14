@@ -33,5 +33,7 @@ fi
 dfails=$(count "\[DRIVER\] FAIL")
 grep -a "\[DRIVER\] FAIL" "$LOG" | cut -c1-300
 fails=$((fails + dfails))
+# A driver that never reached its end (the game crashed, hung or was closed) is a failure in itself.
+if [ "$(count "\[DRIVER\] done")" -eq 0 ]; then echo "FAIL the driver never reached \"done\" (game crashed, hung or timed out)"; fails=$((fails + 1)); fi
 echo "== $fails failure(s) ($dfails from the driver's own checks)"
 exit "$fails"

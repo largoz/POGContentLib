@@ -57,6 +57,7 @@ namespace POGContentLib.RuntimeDriver
             catch (Exception ex) { Log("config read FAILED " + ex.Message); }
             Checks.Enabled = Cfg("checks", 0) == 1;
             if (Checks.Enabled) Checks.RegisterTestItems();
+            Explore.Enabled = Cfg("explore", 0) == 1;
         }
 
         // Every way out ends with the player's setting back at its default and the check count.
@@ -105,6 +106,7 @@ namespace POGContentLib.RuntimeDriver
                     if (menu.m_currentState.TryCast<NetworkMenuMainState>() == null) { _next = Time.unscaledTime + 1f; return; }
                     Log($"main menu up; login {menu.m_currentLoginState}; {Role()}");
                     if (Checks.Enabled) Checks.SetVanillaWeight(0);   // must reach the hub's picks: the next scene load
+                    if (Explore.Enabled) Explore.AtMenu();
                     _step = Step.OpenSaves; _next = Time.unscaledTime + 3f;
                     return;
 
@@ -172,6 +174,7 @@ namespace POGContentLib.RuntimeDriver
                     return;
 
                 case Step.Checks:
+                    if (Explore.Enabled) Explore.InHub();
                     if (Cfg("dump", 1) == 1) DumpShops();
                     CheckShopRules();
                     if (Checks.Enabled) { Checks.DumpNetworkPrefabs(); Checks.HubChecks(); }
@@ -240,7 +243,7 @@ namespace POGContentLib.RuntimeDriver
                 if (mine.Count == 0) Log($"    item: none linked to the slot, nothing within 0.6 m of {holder.position:F2}");
                 foreach (var it in mine)
                     Log($"    item: {it.name} id='{it.m_itemID}' linked={(it.ShopLocation != null && it.ShopLocation.Pointer == slot.Pointer)} active={it.gameObject.activeInHierarchy} shopItem={it.IsShopItem} shopCost={it.ShopCost} dist={Vector3.Distance(it.transform.position, holder.position):F2} offset={holder.InverseTransformPoint(it.transform.position).ToString("F3")}");
-                Log($"    tag '{(slot.m_priceTagText != null ? slot.m_priceTagText.text : "-")}' at {(slot.m_priceTagText != null ? (slot.m_priceTagText.transform.position - holder.position).ToString("F2") : "-")} from holder, active={(slot.m_priceTagText != null && slot.m_priceTagText.gameObject.activeInHierarchy)} price={slot.m_currentPrice?.Value} faction={slot.m_shopFaction?.Value} keeper={(slot.m_shopKeeper != null ? slot.m_shopKeeper.m_npcFlag : "-")} spawned={slot.IsSpawned}");
+                Log($"    tag '{(slot.m_priceTagText != null ? slot.m_priceTagText.text : "-")}' at {(slot.m_priceTagText != null ? (slot.m_priceTagText.transform.position - holder.position).ToString("F2") : "-")} from holder, active={(slot.m_priceTagText != null && slot.m_priceTagText.gameObject.activeInHierarchy)} price={slot.CurrentPrice} faction={slot.m_shopFaction?.Value} keeper={(slot.m_shopKeeper != null ? slot.m_shopKeeper.m_npcFlag : "-")} spawned={slot.IsSpawned}");
             }
         }
 
@@ -590,12 +593,14 @@ namespace POGContentLib.RuntimeDriver
             {
                 var sb = new StringBuilder();
                 sb.Append("  slot ").Append(PathOf(sh.transform));
-                sb.Append(" fixed=").Append(sh.m_networkPrefab != null ? sh.m_networkPrefab.name : "-");
-                var pool = sh.m_lootTable;
-                sb.Append(" pool=").Append(pool != null ? $"{pool.name}[{pool.Items?.Count}]" : "-");
+                // 2026-11-14 build: address references; the names are only known once loaded.
+                sb.Append(" fixedRef=").Append(sh.HasNetworkPrefab ? (sh.m_networkPrefabRef?.AssetGUID ?? "?") : "-");
+                sb.Append(" loaded=").Append(sh.m_loadedPrefab != null ? sh.m_loadedPrefab.name : "-");
+                sb.Append(" poolRef=").Append(sh.HasLootTable ? (sh.m_lootTableRef?.AssetGUID ?? "?") : "-");
                 sb.Append(" keeper=").Append(sh.m_shopKeeper != null ? sh.m_shopKeeper.name : "-");
                 sb.Append(" faction=").Append(sh.m_shopFaction != null ? sh.m_shopFaction.Value.ToString() : "?");
-                sb.Append(" price=").Append(sh.m_currentPrice != null ? sh.m_currentPrice.Value.ToString() : "?");
+                sb.Append(" price=").Append(sh.CurrentPrice);
+                sb.Append(" shopItem=").Append(sh.CurrentShopItem != null ? sh.CurrentShopItem.name : "-");
                 sb.Append(" tag='").Append(sh.m_priceTagText != null ? sh.m_priceTagText.text : "-").Append('\'');
                 sb.Append(" item=").Append(sh.m_networkInstance != null ? sh.m_networkInstance.name : "-");
                 sb.Append(" noSpawnIfSave=").Append(sh.m_disableSpawnIfSaveFileExist);

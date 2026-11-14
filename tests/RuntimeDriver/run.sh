@@ -24,6 +24,8 @@ if pgrep -x 'Pit of Goblin.e' >/dev/null; then echo "game already running (the u
 # possibly after this script has given up and removed its files (seen 2026-11-14).
 if ! pgrep -f 'steamrt64/steam|ubuntu12_32/steam' >/dev/null; then echo "Steam is not running: start it (logged in) first: abort"; exit 1; fi
 mkdir -p "$OUT"
+# Under heavy load the game stalled on the loading screen and never hosted (load 62, 2026-11-14).
+echo "load average: $(cut -d' ' -f1-3 /proc/loadavg)"
 
 deployed=()
 deploy() {   # atomic copy into Mods/, remembered for removal

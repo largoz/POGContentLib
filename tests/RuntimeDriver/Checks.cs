@@ -73,6 +73,18 @@ namespace POGContentLib.RuntimeDriver
                   "notes: " + string.Join(" | ", rec.Notes));
             // One roll per slot object although OnNetworkSpawn repeats: run.sh counts the pick lines (expect.txt).
             Say($"G3 most OnNetworkSpawn calls on one slot object: {SpawnTrace.MaxCalls}");
+
+            // The game's own answer, not the library's bookkeeping: what each touched slot actually holds.
+            foreach (var kv in records)
+            {
+                var r = kv.Value;
+                if (r.Resolved.Untouched || r.Slot == null || r.Picked == null) continue;
+                var held = r.Slot.CurrentShopItem;
+                string heldId = held == null ? "nothing" : !string.IsNullOrEmpty(held.m_itemID) && held.m_itemID.Contains(":") && !held.m_itemID.StartsWith("vanilla:")
+                    ? held.m_itemID : "vanilla:" + held.gameObject.name.Replace("(Clone)", "").Trim();
+                Check($"slot holds the chosen item ({kv.Key.Substring(kv.Key.LastIndexOf('/') + 1)})", heldId == r.Picked,
+                      $"chose {r.Picked}, the game's CurrentShopItem is {heldId} (m_itemID '{held?.m_itemID}')");
+            }
         }
 
         // ---- G2: the network prefab list ----

@@ -40,10 +40,16 @@ loads `PitOfGoblin_Lobby`. Default slot = the last one, so slot 1 stays the play
 ## Asserting run
 
 ```sh
-mkdir -p /tmp/run && cp -r checks/. /tmp/run/
-./run.sh /tmp/run ../../samples/ShopDemo/bin/Release/net6.0/ShopDemo.dll ../../samples/ShopDemo/bin/Release/net6.0/pogshop.json
+O=/run/media/tim/Games/pog-runs/checks; mkdir -p $O && cp -r checks/. $O/
+setsid -w ./run.sh $O ../../samples/ShopDemo/bin/Release/net6.0/ShopDemo.dll ../../samples/ShopDemo/bin/Release/net6.0/pogshop.json
 echo $?    # number of failures
 ```
+
+`setsid -w`: the run (and its cleanup) survives the shell or agent session that started it; without it, a session
+that ended mid-run left the driver in `Mods/` (2026-11-14). Keep `<out dir>` outside temporary session folders.
+
+`explore=1` (`Explore.cs`): read-only probes of the 2026-11-14 build (NGO prefab list, the game's own prefab list from
+`NetworkHandler`, address keys, every hub slot's references) and traces of the slot pipeline, lines `[DRIVER] X …`.
 
 `checks/` holds the driver config, a shop file with a mistake per rule (`shops/DriverChecks.json`), and
 `expect.txt`: after the game closes, `expect.sh` checks the log against it (`ERE` must appear, `!ERE` must not,

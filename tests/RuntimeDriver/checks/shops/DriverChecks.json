@@ -7,6 +7,10 @@
     { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Bread", "item": "NoSuchItem", "weight": 1 },
     { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Bread", "item": "FreeThing", "weight": 1 },
     { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Breadd", "item": "vanilla:Item_Apple", "weight": 1 },
-    { "slot": "nosuchslot", "item": "vanilla:Item_Apple", "weight": 1 }
+    { "slot": "nosuchslot", "item": "vanilla:Item_Apple", "weight": 1 },
+    // A fixed slot made empty: the game's own item has weight 0 at VanillaWeight 0, "nothing" is all that is left.
+    { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Key", "item": "nothing", "weight": 1 },
+    // A pool slot (loot table) given a mod item: only the HasNetworkPrefab / LoadNetworkPrefab substitution reaches it.
+    { "slot": "vanilla:PitOfGoblin_Lobby/Merchant_Curiosa/Game.Spawning.ShopLocation Item_Dice", "item": "ShopDemo:GlowBerry", "weight": 1 }
   ]
 }

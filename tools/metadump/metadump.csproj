@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Prints types, properties and method signatures of a .NET assembly from its metadata alone (nothing is loaded).
+       Used on the proxies MelonLoader generates, after a game update. Usage: see Program.cs. -->
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><Nullable>disable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+</Project>

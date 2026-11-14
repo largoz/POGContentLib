@@ -22,6 +22,8 @@
     <Reference Include="UnityEngine.PhysicsModule"><HintPath>$(InteropDir)\UnityEngine.PhysicsModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Assembly-CSharp"><HintPath>$(InteropDir)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Unity.Netcode.Runtime"><HintPath>$(InteropDir)\Unity.Netcode.Runtime.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.Addressables"><HintPath>$(InteropDir)\Unity.Addressables.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.ResourceManager"><HintPath>$(InteropDir)\Unity.ResourceManager.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Unity.Collections"><HintPath>$(InteropDir)\Unity.Collections.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.UI"><HintPath>$(InteropDir)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Unity.TextMeshPro"><HintPath>$(InteropDir)\Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
