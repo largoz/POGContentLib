@@ -171,20 +171,46 @@ namespace POGContentLib.Items
         public override void Attach(InventoryItem item)
         {
             var ready = AddOrGet<ActiveItem_ReadyItem>(item.gameObject);
-
-            // Fill in what the component would normally get from its prefab. Leaving these null is how
-            // an added NetworkBehaviour ends up throwing every frame in Update.
-            ready.m_inventoryItem = item;
+            ReadyItemFields.Fill(ready, item, null);
             ready.m_readyItemDuration = ReadyDuration;
-            ready.m_readyItemCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
-            ready.m_effectTime = 0f;
             ready.m_fovChange = FovChange;
-            ready.m_fovChangeReadyFactor = 1f;
             ready.m_useCrosshair = UseCrosshair;
-            ready.m_useCrosshairReadyOnly = false;
-            ready.m_preventUseIfExhausted = false;
+        }
+    }
+
+    /// <summary>
+    /// The serialized fields of ActiveItem_ReadyItem (the base of every hold-to-use item, food included) that an
+    /// added component does not get from a prefab. Left null they throw: m_endPositionTransform in OnNetworkSpawn on
+    /// the 2026-11-14 build (a shop-spawned food item, seen in the Unity log), and in Update before that.
+    /// </summary>
+    internal static class ReadyItemFields
+    {
+        /// <summary>Fill <paramref name="ready"/>; with a <paramref name="donor"/>, its timing and its end pose.</summary>
+        public static void Fill(ActiveItem_ReadyItem ready, InventoryItem item, ActiveItem_ReadyItem donor)
+        {
+            ready.m_inventoryItem = item;
+            ready.m_readyItemDuration = donor != null ? donor.m_readyItemDuration : 0f;
+            ready.m_readyItemCurve = donor?.m_readyItemCurve ?? AnimationCurve.Linear(0f, 0f, 1f, 1f);
+            ready.m_effectTime = donor != null ? donor.m_effectTime : 0f;
+            ready.m_fovChange = donor != null ? donor.m_fovChange : 0f;
+            ready.m_fovChangeReadyFactor = donor != null ? donor.m_fovChangeReadyFactor : 1f;
+            ready.m_useCrosshair = donor != null && donor.m_useCrosshair;
+            ready.m_useCrosshairReadyOnly = donor != null && donor.m_useCrosshairReadyOnly;
+            ready.m_preventUseIfExhausted = donor != null && donor.m_preventUseIfExhausted;
             if (ready.m_endPositionTransform == null)
-                ready.m_endPositionTransform = item.transform;
+                ready.m_endPositionTransform = EndPoint(item, donor);
+        }
+
+        // The donor's end point is a transform of its own prefab; give the item one at the same local pose.
+        private static Transform EndPoint(InventoryItem item, ActiveItem_ReadyItem donor)
+        {
+            var end = donor?.m_endPositionTransform;
+            if (end == null || end == donor.transform) return item.transform;
+            var go = new GameObject("POG_ReadyEnd");
+            go.transform.SetParent(item.transform, false);
+            go.transform.localPosition = donor.transform.InverseTransformPoint(end.position);
+            go.transform.localRotation = Quaternion.Inverse(donor.transform.rotation) * end.rotation;
+            return go.transform;
         }
     }
 
@@ -235,12 +261,15 @@ namespace POGContentLib.Items
         {
             var eat = AddOrGet<ActiveItem_Eat>(item.gameObject);
 
+            ActiveItem_Eat donor = null;
             if (!string.IsNullOrEmpty(CopyFrom))
             {
-                var donor = FindVanillaEat(CopyFrom);
+                donor = FindVanillaEat(CopyFrom);
                 if (donor != null) CopySettings(donor, eat);
                 else MelonLogger.Warning($"[POGContentLib] EatCapability: CopyFrom '{CopyFrom}' unavailable; starting empty.");
             }
+            // ActiveItem_Eat is an ActiveItem_ReadyItem: its base fields need filling like any added one.
+            ReadyItemFields.Fill(eat, item, donor);
 
             if (HealthOnEating.HasValue) eat.m_healthOnEating = HealthOnEating.Value;
             if (DamageOnEating.HasValue) eat.m_damageOnEating = DamageOnEating.Value;
@@ -255,12 +284,12 @@ namespace POGContentLib.Items
 
             if (!string.IsNullOrEmpty(BuffFrom))
             {
-                var donor = FindVanillaEat(BuffFrom);
-                if (donor != null && donor.m_applyBuff != null)
+                var buffDonor = FindVanillaEat(BuffFrom);
+                if (buffDonor != null && buffDonor.m_applyBuff != null)
                 {
-                    eat.m_applyBuff = donor.m_applyBuff;
-                    eat.m_buffValueToAdd = donor.m_buffValueToAdd;
-                    eat.m_buffValueToStart = donor.m_buffValueToStart;
+                    eat.m_applyBuff = buffDonor.m_applyBuff;
+                    eat.m_buffValueToAdd = buffDonor.m_buffValueToAdd;
+                    eat.m_buffValueToStart = buffDonor.m_buffValueToStart;
                 }
                 else MelonLogger.Warning($"[POGContentLib] EatCapability: BuffFrom '{BuffFrom}' has no buff (or is not a loaded food item).");
             }

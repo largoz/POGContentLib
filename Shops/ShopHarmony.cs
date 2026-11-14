@@ -65,6 +65,28 @@ namespace POGContentLib.Shops
         {
             _chosen[slot.GetInstanceID()] = prefab;
             slot.m_loadedPrefab = prefab;   // what LoadNetworkPrefab would have cached
+            // The HasNetworkPrefab prefix alone did not reach a slot without a reference (a pool slot, a new slot:
+            // 2026-11-14, both stayed empty), so the game reads the field itself. Give such a slot a reference;
+            // LoadNetworkPrefab answers for it and the preload is skipped, so it is never loaded.
+            var r = slot.m_networkPrefabRef;
+            if (r == null || string.IsNullOrEmpty(r.AssetGUID))
+            {
+                var standIn = StandInGuid();
+                if (standIn != null) slot.m_networkPrefabRef = new UnityEngine.AddressableAssets.AssetReferenceGameObject(standIn);
+            }
+        }
+
+        // A GUID of a real GameObject in the game's catalog (the persistent player prefab), so that even an
+        // unexpected load of the stand-in would find an asset.
+        private static string _standIn;
+        private static string StandInGuid()
+        {
+            if (!string.IsNullOrEmpty(_standIn)) return _standIn;
+            try { _standIn = Il2CppGame.Networking.NetworkHandler.Singleton?.m_persistentPlayer?.AssetGUID; }
+            catch { _standIn = null; }
+            if (string.IsNullOrEmpty(_standIn))
+                MelonLoader.MelonLogger.Warning("[POGContentLib] [Shops] no stand-in reference for slots without one; their choice may not reach the game.");
+            return _standIn;
         }
 
         public static bool TryGet(UnityEngine.Object spawner, out Unity.Netcode.NetworkObject prefab)

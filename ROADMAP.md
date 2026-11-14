@@ -55,10 +55,19 @@ the new pipeline (read `CreateShopItems` / `LoadNetworkPrefab` / `HasNetworkPref
       starter shop's bread slot held `ShopDemo:GlowBerry`, read back from the game's `CurrentShopItem`.
 - [x] Vanilla content of a slot is read by address (`Core/Addresses`: the fixed item's address, the pool's table loaded
       with its own handle and released).
-- [ ] A new slot placed after the batch was not stocked: `StockIfMissed` starts its coroutine; not yet seen in game.
-- [ ] An empty choice ("nothing") and a pool slot given a mod item: rules in `checks/`, not yet seen in game (the run
-      stalled on the loading screen at load average 62: another session's build).
-- [ ] Dungeon merchants (`SellerTemplates`), clients, the dev tools: not touched yet.
+- [x] Slots without an item reference (a pool slot, a new slot) did not take the choice: the game reads
+      `m_networkPrefabRef` itself, so the `HasNetworkPrefab` prefix alone does not reach them. A chosen slot without one
+      gets a stand-in reference (the persistent player prefab's GUID); `LoadNetworkPrefab` answers and the preload is
+      skipped, so it is never loaded. A new slot placed after the scene's batch also starts its own coroutine
+      (`StockIfMissed`).
+- [x] Food items threw in `ActiveItem_ReadyItem.OnNetworkSpawn` when a shop spawned them (Unity log only): `EatCapability`
+      left the base class fields null. Both capabilities now fill them (`ReadyItemFields`, end pose from the donor).
+- [x] **Asserting run `checks-5`: 0 failures** (18 log expectations, 7 driver checks, Unity log free of exceptions): the
+      game's own `CurrentShopItem` matches the choice in a fixed slot (mod item), a fixed slot made empty, a pool slot
+      (mod item) and a new slot; the warnings, the setting and the registration as above. Host only.
+- [ ] Dungeon merchants (`SellerTemplates`), clients, the dev tools, eating a mod food item: not checked on this build.
+- [ ] Runs stall on the loading screen under heavy load (62 and 28 seen from another session's builds); queue runs
+      behind `load < 10`.
 
 ### G. Check first (in this order; each one decides something)
 
@@ -133,7 +142,7 @@ closest existing ids. In game = seen in the asserting run on the 2026-11-14 buil
 - [x] A rule targets a vanilla slot id that matches nothing in its scene: warned 5 s after the scene's slots spawned,
       closest ids listed (in game). A rule for a mod slot the mod does not define: warned at load (in game, unit test).
 - [x] An unknown item id: warned before the session (mod items) or when a slot uses it (in game); the dev tools show
-      the slot's notes. **Wording wrong for one case:** an item that is registered but whose template was not built
+      the slot's notes. **Wording wrong for one case (still open):** an item that is registered but whose template was not built
       (2026-11-14: every item) is reported as "not installed, or misspelt". Ask the Items module and say which.
 - [~] `ShopCost` 0: warned before the session and when a slot uses it. **Not seen in game:** the test item could not
       be built on the new game build.

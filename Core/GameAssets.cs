@@ -13,6 +13,9 @@ namespace POGContentLib.Core
         public static InventoryItem FindItemPrefab(string prefabName)
         {
             if (string.IsNullOrEmpty(prefabName)) return null;
+            // 2026-11-14 build: item prefabs come with the game's network prefab list (GamePrefabs).
+            var listed = GamePrefabs.Find(prefabName);
+            if (listed != null && listed.GetComponent<InventoryItem>() != null) return listed.GetComponent<InventoryItem>();
             var all = Resources.FindObjectsOfTypeAll<InventoryItem>();
             for (int i = 0; i < all.Length; i++)
                 if (all[i] != null && all[i].gameObject.name == prefabName) return all[i];

@@ -103,9 +103,12 @@ if [ ! -f "$LOG" ] || [ "$(stat -c %Y "$LOG")" -lt "$T0" ]; then
   exit 100
 fi
 cp "$LOG" "$OUT/Latest.log"
+# Unity's own log: exceptions inside game code (a coroutine, OnNetworkSpawn) appear only there.
+PLAYER_LOG="/run/media/tim/Games/SteamLibrary/steamapps/compatdata/3253530/pfx/drive_c/users/steamuser/AppData/LocalLow/Friendly Foe/Pit of Goblin/Player.log"
+[ -f "$PLAYER_LOG" ] && [ "$(stat -c %Y "$PLAYER_LOG")" -ge "$T0" ] && cp "$PLAYER_LOG" "$OUT/Player.log"
 grep -a -E "\[DRIVER\]|POGContentLib|\[Shops\]|ERROR|Exception" "$LOG" | grep -a -v "\[DRIVER\] G2 prefab" | cut -c1-300
 
 # Expectations (<out dir>/expect.txt, see expect.sh) and the driver's own FAIL lines.
 # Exit status = number of failures (0 = all passed).
-"$HERE/expect.sh" "$OUT/Latest.log" "$OUT/expect.txt"
+"$HERE/expect.sh" "$OUT/Latest.log" "$OUT/expect.txt" "$OUT/Player.log"
 exit $?

@@ -18,10 +18,12 @@ vanilla weight 0 \(player setting\)
 # The sample's new slot is still placed and stocked once; the vanilla slot is rolled once although
 # OnNetworkSpawn runs more than once (G3).
 placed ShopDemo:berry_stand
-=1 \[Shops\] ShopDemo:berry_stand: [a-zA-Z]
+=1 \[Shops\] ShopDemo:berry_stand: ShopDemo:
 =1 \[Shops\] vanilla:PitOfGoblin_Lobby/StarterShop/Game\.Spawning\.ShopLocation Item_Bread: [a-zA-Z]
 =1 \[Shops\] vanilla:PitOfGoblin_Lobby/StarterShop/Game\.Spawning\.ShopLocation Item_Key: stays empty
 =1 \[Shops\] vanilla:PitOfGoblin_Lobby/Merchant_Curiosa/Game\.Spawning\.ShopLocation Item_Dice: ShopDemo:GlowBerry
 !stocking failed
+# Exceptions in game code show only in Unity's log (a food item without its ReadyItem fields threw in OnNetworkSpawn).
+player: !NullReferenceException
 # The driver's own PASS/FAIL lines are counted by run.sh; this one proves it got to the end.
 \[DRIVER\] checks: [0-9]+ pass, [0-9]+ fail
