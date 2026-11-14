@@ -12,5 +12,10 @@
     { "slot": "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Key", "item": "nothing", "weight": 1 },
     // A pool slot (loot table) given a mod item: only the HasNetworkPrefab / LoadNetworkPrefab substitution reaches it.
     { "slot": "vanilla:PitOfGoblin_Lobby/Merchant_Curiosa/Game.Spawning.ShopLocation Item_Dice", "item": "ShopDemo:GlowBerry", "weight": 1 }
+  ],
+  // A dungeon merchant variant (driver dungeon=1): weight 100 makes the Curiosa preset near certain at the entrance.
+  "sellers": [
+    { "id": "test_merchant", "preset": "EntranceCave_Shopkeeper_Curiosa", "weight": 100,
+      "slots": [ [ { "item": "ShopDemo:GlowBerry", "weight": 1 } ] ] }
   ]
 }

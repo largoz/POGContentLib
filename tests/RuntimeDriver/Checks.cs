@@ -87,6 +87,21 @@ namespace POGContentLib.RuntimeDriver
             }
         }
 
+        /// <summary>In the dungeon: the mod merchant variant came up and its slots hold what the library chose.</summary>
+        public static void MerchantChecks(System.Collections.Generic.List<POGContentLib.Shops.SlotRecord> merchantSlots)
+        {
+            Check("a mod merchant came up", merchantSlots.Count > 0,
+                  merchantSlots.Count > 0 ? string.Join(", ", merchantSlots.Select(r => r.SlotId)) : "no slot of a mod merchant in this dungeon (weight 100 of ~110: unlikely)");
+            foreach (var r in merchantSlots)
+            {
+                if (r.Slot == null || r.Picked == null || r.Resolved.Untouched) continue;
+                var held = r.Slot.CurrentShopItem;
+                string heldId = held == null ? "nothing" : !string.IsNullOrEmpty(held.m_itemID) && held.m_itemID.Contains(":") && !held.m_itemID.StartsWith("vanilla:")
+                    ? held.m_itemID : "vanilla:" + held.gameObject.name.Replace("(Clone)", "").Trim();
+                Check($"merchant slot holds the chosen item ({r.SlotId})", heldId == r.Picked, $"chose {r.Picked}, the game's CurrentShopItem is {heldId}");
+            }
+        }
+
         // ---- G2: the network prefab list ----
 
         public static void DumpNetworkPrefabs()

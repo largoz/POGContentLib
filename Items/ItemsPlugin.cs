@@ -35,6 +35,17 @@ namespace POGContentLib.Items
         private readonly List<ModItemDefinition> _defs = new();
         private readonly HashSet<string> _built = new();
 
+        /// <summary>Whether a mod item "Mod:Item" was registered with Content.Items (built or not).</summary>
+        public bool IsRegistered(string fullId)
+        {
+            foreach (var d in _defs)
+                if (ContentRegistry.FullId(d.ModId, d.ContentId) == fullId) return true;
+            return false;
+        }
+
+        /// <summary>Whether its template has been built (and can be registered and sold).</summary>
+        public bool IsBuilt(string fullId) => _built.Contains(fullId);
+
         /// <summary>Resolve a definition by hash (used by ModItemHandle).</summary>
         internal static ModItemDefinition ResolveDefinition(uint hash)
             => CoreServices.Content.GetDefinitionByHash(hash) as ModItemDefinition;

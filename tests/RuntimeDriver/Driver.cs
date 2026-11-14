@@ -425,6 +425,7 @@ namespace POGContentLib.RuntimeDriver
                     CheckShopRules();
                     var mine = POGContentLib.Items.Content.Shops.Slots.Values.Where(r => r.SlotId.Contains("#")).OrderBy(r => r.SlotId).ToList();
                     foreach (var r in mine) Log($"dungeon: mod merchant slot {r.SlotId} picked {r.Picked}");
+                    if (Checks.Enabled) Checks.MerchantChecks(mine);
                     if (mine.Count > 0 && mine[0].Slot != null && LookAtTransform(mine[0].Slot.transform)) Log("shot merchant");
                     else if (mine.Count == 0) Log("dungeon: no mod merchant in this dungeon");
                     _dg = 3; _next = Time.unscaledTime + 5f; return false;
@@ -457,6 +458,8 @@ namespace POGContentLib.RuntimeDriver
                     Log($"dungeon: after 8 s running, elapsed {t3:F1} (change {t3 - _t1:F2})");
                     try { Call("SetMode", ModeValue("Off")); } catch { }
                     MelonPreferences.GetEntry<bool>("POGContentLib_ShopTools", "Enabled").Value = false;
+                    // Save writes every setting: put the test value back first, or it lands in the player's cfg.
+                    if (Checks.Enabled) Checks.SetVanillaWeight(10);
                     MelonPreferences.Save();
                     return true;
                 }

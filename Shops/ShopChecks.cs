@@ -52,6 +52,15 @@ namespace POGContentLib.Shops
         public static void NotLoaded(string item, string usedBy)
         {
             if (!Once("item:" + item)) return;
+            // Registered but not built is a different problem from a missing mod or a typo (2026-11-14: every item,
+            // when the shells were not in memory): say which.
+            var items = POGContentLib.Items.ItemsPlugin.Instance;
+            if (items != null && items.IsRegistered(item))
+            {
+                MelonLogger.Warning($"{Tag} item '{item}' ({usedBy}) is registered but its template was not built " +
+                                    "(see the [POGContentLib] lines about its shell above). Shops leave it out.");
+                return;
+            }
             var near = NearestIds.Of(item, KnownItemIds());
             MelonLogger.Warning($"{Tag} item '{item}' ({usedBy}) is not loaded: its mod is not installed, or the id is misspelt. " +
                                 $"Shops leave it out.{(near.Count > 0 ? " Closest loaded ids: " + string.Join(", ", near) : "")}");

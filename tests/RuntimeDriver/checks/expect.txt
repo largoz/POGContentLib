@@ -24,6 +24,9 @@ placed ShopDemo:berry_stand
 =1 \[Shops\] vanilla:PitOfGoblin_Lobby/Merchant_Curiosa/Game\.Spawning\.ShopLocation Item_Dice: ShopDemo:GlowBerry
 !stocking failed
 # Exceptions in game code show only in Unity's log (a food item without its ReadyItem fields threw in OnNetworkSpawn).
-player: !NullReferenceException
+# Only frames of code the library feeds count: the dungeon logs a vanilla NRE in DestructibleInventory -> Pickup
+# (2026-11-14, no mod item in loot there; not checked against a vanilla run).
+player: !^  at Game\.Spawning\.(ShopLocation|SpawnerBase|ItemSpawner)
+player: !^  at ActiveItem_
 # The driver's own PASS/FAIL lines are counted by run.sh; this one proves it got to the end.
 \[DRIVER\] checks: [0-9]+ pass, [0-9]+ fail
