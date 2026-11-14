@@ -51,22 +51,21 @@ namespace POGContentLib.Shops.Model
             TotalWeight > 0 ? Entries.Where(e => e.Item == item).Sum(e => e.Weight) / TotalWeight : 0;
 
         /// <summary>
-        /// Pick an entry for a uniform random number r in [0, 1). Returns null when the slot has no weight
-        /// at all; returns an entry whose Item is "nothing" when the slot should stay empty.
+        /// Pick an entry for a uniform random number r in [0, 1) (<see cref="WeightedPick"/>). Entries
+        /// <paramref name="usable"/> rejects (an item that is not loaded) take no part. Returns null when no
+        /// entry can come up; returns an entry whose Item is "nothing" when the slot should stay empty.
         /// </summary>
-        public SlotEntry Pick(double r)
+        public SlotEntry Pick(double r, Func<SlotEntry, bool> usable = null)
         {
-            if (TotalWeight <= 0) return null;
-            double target = r * TotalWeight, acc = 0;
-            SlotEntry last = null;
-            foreach (var e in Entries)
-            {
-                if (e.Weight <= 0) continue;
-                acc += e.Weight;
-                last = e;
-                if (target < acc) return e;
-            }
-            return last;   // r rounding at the top end
+            int i = WeightedPick.Index(Entries, e => usable == null || usable(e) ? e.Weight : 0, r);
+            return i < 0 ? null : Entries[i];
+        }
+
+        /// <summary>Chance of one entry among the entries <paramref name="usable"/> accepts, 0..1.</summary>
+        public double ChanceAmong(SlotEntry e, Func<SlotEntry, bool> usable)
+        {
+            double total = Entries.Where(x => usable(x) && WeightedPick.Usable(x.Weight)).Sum(x => x.Weight);
+            return total > 0 && usable(e) && WeightedPick.Usable(e.Weight) ? e.Weight / total : 0;
         }
     }
 
@@ -123,6 +122,7 @@ namespace POGContentLib.Shops.Model
         private readonly Dictionary<string, (string mod, List<PoolEntry> pool)> _sellerSlots = new Dictionary<string, (string, List<PoolEntry>)>(StringComparer.Ordinal);
         private readonly Dictionary<string, (string mod, TagDef standing)> _displays = new Dictionary<string, (string, TagDef)>(StringComparer.Ordinal);
         private readonly List<Diagnostic> _diagnostics = new List<Diagnostic>();
+        private readonly List<ItemReference> _itemRefs = new List<ItemReference>();
 
         public ShopCatalogOptions Options { get; }
         /// <summary>Mods in the order their rules apply.</summary>
@@ -221,7 +221,71 @@ namespace POGContentLib.Shops.Model
                 foreach (var req in requires[mod])
                     if (!byMod.ContainsKey(req))
                         _diagnostics.Add(new Diagnostic(Severity.Info, mod, $"requires '{req}', which has no shop file loaded; its patches on '{req}' content will find nothing"));
+
+            CollectItemReferences(byMod);
+            CheckModSlotTargets(byMod);
         }
+
+        // A rule aimed at a mod slot that mod does not define does nothing; say so at load, not never.
+        // (Vanilla slot ids can only be checked against a loaded scene: the runtime does that.)
+        private void CheckModSlotTargets(Dictionary<string, List<ShopFile>> byMod)
+        {
+            foreach (var kv in _ops.OrderBy(k => k.Key, StringComparer.Ordinal))
+            {
+                string slot = kv.Key, owner = ShopIds.OwnerOf(slot);
+                if (owner == null || owner == ShopIds.Vanilla) continue;
+                if (_modSlots.ContainsKey(slot) || _sellerSlots.ContainsKey(slot) || IsSlotOfKnownSeller(slot)) continue;
+                string who = string.Join(", ", kv.Value.Select(o => o.Mod).Distinct());
+                if (!byMod.ContainsKey(owner))
+                {
+                    _diagnostics.Add(new Diagnostic(Severity.Info, who,
+                        $"rules target slot '{slot}', but '{owner}' has no shop file loaded; they do nothing until it is installed"));
+                    continue;
+                }
+                var known = _modSlots.Keys.Where(id => ShopIds.OwnerOf(id) == owner)
+                    .Concat(_sellers.Where(s => s.Mod == owner).Select(s => SellerSlotId(s.FullId, 1)));
+                var near = NearestIds.Of(slot, known);
+                _diagnostics.Add(new Diagnostic(Severity.Warning, who,
+                    $"rules target slot '{slot}', which '{owner}' does not define; they do nothing." +
+                    (near.Count > 0 ? $" Closest ids: {string.Join(", ", near)}" : $" '{owner}' defines no slots.")));
+            }
+        }
+
+        // "Mod:seller#n" of a seller some file defines (its slot n may have no stock of its own).
+        private bool IsSlotOfKnownSeller(string slot)
+        {
+            int hash = slot.LastIndexOf('#');
+            if (hash <= 0 || !int.TryParse(slot.Substring(hash + 1), out int n) || n < 1) return false;
+            string seller = slot.Substring(0, hash);
+            return _sellers.Any(s => s.FullId == seller);
+        }
+
+        private void CollectItemReferences(Dictionary<string, List<ShopFile>> byMod)
+        {
+            void Ref(string item, string mod, string slot, string how)
+            {
+                if (!string.IsNullOrEmpty(item) && item != ShopIds.Nothing) _itemRefs.Add(new ItemReference(item, mod, slot, how));
+            }
+            foreach (var ms in _modSlots.Values)
+                foreach (var e in ms.Def.Pool ?? new List<PoolEntry>())
+                    if (e != null) Ref(ShopIds.Qualify(e.Item, ms.Mod), ms.Mod, ms.FullId, "pool");
+            foreach (var kv in _sellerSlots)
+                foreach (var e in kv.Value.pool)
+                    if (e != null) Ref(ShopIds.Qualify(e.Item, kv.Value.mod), kv.Value.mod, kv.Key, "merchant stock");
+            foreach (var kv in _ops)
+                foreach (var op in kv.Value)
+                {
+                    if (op.Kind == OpKind.Add) Ref(op.Item, op.Mod, kv.Key, "add");
+                    else if (op.Kind == OpKind.Replace) Ref(op.ReplaceWith, op.Mod, kv.Key, "replace");
+                }
+        }
+
+        /// <summary>Every item some rule can put on sale, with where and how (for load-time checks).</summary>
+        public IReadOnlyList<ItemReference> ItemReferences => _itemRefs;
+
+        /// <summary>The mods whose add/patch rules target a slot, in the order they apply.</summary>
+        public IReadOnlyList<string> ModsTargeting(string slotId) =>
+            _ops.TryGetValue(slotId, out var ops) ? ops.Select(o => o.Mod).Distinct().ToList() : new List<string>();
 
         private static HashSet<string> RequiresOf(List<ShopFile> files, Func<string, bool> keep)
         {
@@ -353,9 +417,30 @@ namespace POGContentLib.Shops.Model
         }
     }
 
+    /// <summary>One place a rule names an item: the item, the mod whose rule it is, the slot, and how ("add", "pool"…).</summary>
+    public sealed class ItemReference
+    {
+        public string Item { get; }
+        public string Mod { get; }
+        public string Slot { get; }
+        public string How { get; }
+        public ItemReference(string item, string mod, string slot, string how) { Item = item; Mod = mod; Slot = slot; How = how; }
+        public override string ToString() => $"{How} by {Mod} in {Slot}";
+    }
+
     public sealed class ShopCatalogOptions
     {
-        /// <summary>Weight of one occurrence of a vanilla item in a slot: the scale modders weigh against.</summary>
-        public double DefaultVanillaWeight { get; set; } = 10;
+        /// <summary>The weight a vanilla item gets when nobody sets one: the scale modders weigh against.</summary>
+        public const double StandardVanillaWeight = 10;
+
+        /// <summary>
+        /// Weight of one occurrence of a vanilla item in a slot some rule touches. 0 = only the mods' items
+        /// come up there. A player setting (host only); shop files are written against
+        /// <see cref="StandardVanillaWeight"/>.
+        /// </summary>
+        public double DefaultVanillaWeight { get; set; } = StandardVanillaWeight;
+
+        /// <summary>False for a negative, NaN or infinite weight.</summary>
+        public static bool IsValidVanillaWeight(double w) => w >= 0 && !double.IsNaN(w) && !double.IsInfinity(w);
     }
 }

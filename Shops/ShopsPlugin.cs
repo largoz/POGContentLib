@@ -38,18 +38,45 @@ namespace POGContentLib.Shops
 
         public static string UserShopsDirectory => Path.Combine(MelonEnvironment.UserDataDirectory, "POGContentLib", "Shops");
 
+        public const string PreferencesCategory = "POGContentLib_Shops";
+        private MelonPreferences_Entry<double> _vanillaWeight;
+
         public void Build(PluginGraph graph)
         {
             Instance = this;
+            var cat = MelonPreferences.CreateCategory(PreferencesCategory, "POGContentLib shops");
+            _vanillaWeight = cat.CreateEntry("VanillaWeight", ShopCatalogOptions.StandardVanillaWeight, "Vanilla item weight",
+                $"When a mod adds items to a game shop slot, each of the game's own items there gets this weight. " +
+                $"Mods weigh their items against {ShopCatalogOptions.StandardVanillaWeight:0}: a mod item of weight {ShopCatalogOptions.StandardVanillaWeight:0} " +
+                "is as likely as a vanilla one. 0 = only the mods' items in such slots. Applies on the host, from the next scene.");
+
             graph.AddSystem(PluginStage.SceneLoaded, Name, () =>
             {
-                if (Catalog == null) Reload();
+                if (Catalog == null || Catalog.Options.DefaultVanillaWeight != Options().DefaultVanillaWeight) Reload();
                 SellerTemplates.ApplyItemDisplays(Catalog);
                 SlotTemplates.BuildPending(Catalog);
                 SellerTemplates.BuildPending(Catalog);
                 ShopRuntime.OnSceneLoaded();
             });
+            // Items are registered by now (they must be, to join a session): a rule naming a missing or
+            // unpriced mod item is reported here, before anyone looks for it in a shop.
+            graph.AddSystem(PluginStage.BeforeSessionStart, Name, () => ShopChecks.CheckModItems(Catalog));
             graph.AddSystem(PluginStage.SessionStop, Name, () => { ShopRuntime.Reset(); ShopEmptySlots.Reset(); });
+        }
+
+        private bool _badWeightReported;
+
+        /// <summary>The catalog options from the player's settings (a bad value falls back to the standard one).</summary>
+        public ShopCatalogOptions Options()
+        {
+            double w = _vanillaWeight?.Value ?? ShopCatalogOptions.StandardVanillaWeight;
+            if (ShopCatalogOptions.IsValidVanillaWeight(w)) return new ShopCatalogOptions { DefaultVanillaWeight = w };
+            if (!_badWeightReported)
+            {
+                _badWeightReported = true;
+                MelonLogger.Warning($"[POGContentLib] [Shops] {PreferencesCategory}.VanillaWeight = {w} is not a number >= 0; using {ShopCatalogOptions.StandardVanillaWeight:0}.");
+            }
+            return new ShopCatalogOptions();
         }
 
         /// <summary>Add a shop file from code (validated like a file on disk). Call from OnInitializeMelon.</summary>
@@ -92,11 +119,12 @@ namespace POGContentLib.Shops
             files = files.Where(f => !overridden.Contains(f.Mod) || IsUserFile(f, userDir)).ToList();
             files.AddRange(_codeFiles);
             _files = files;
-            Catalog = ShopCatalog.Build(files);
+            Catalog = ShopCatalog.Build(files, Options());
             Log(_loadDiagnostics);
             Log(Catalog.Diagnostics);
             MelonLogger.Msg($"[POGContentLib] [Shops] {files.Count} shop file(s) from {files.Select(f => f.Mod).Distinct().Count()} mod(s): " +
-                            $"{Catalog.ModSlots.Count} new slot(s), {Catalog.TargetedSlots.Count()} slot(s) with rules, {Catalog.Sellers.Count} merchant(s); order {string.Join(" > ", Catalog.ModOrder)}");
+                            $"{Catalog.ModSlots.Count} new slot(s), {Catalog.TargetedSlots.Count()} slot(s) with rules, {Catalog.Sellers.Count} merchant(s); order {string.Join(" > ", Catalog.ModOrder)}" +
+                            (Catalog.Options.DefaultVanillaWeight != ShopCatalogOptions.StandardVanillaWeight ? $"; vanilla weight {Catalog.Options.DefaultVanillaWeight:0.##} (player setting)" : ""));
         }
 
         private static bool IsUserFile(ShopFile f, string userDir)

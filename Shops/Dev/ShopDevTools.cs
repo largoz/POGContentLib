@@ -413,7 +413,7 @@ namespace POGContentLib.Shops.Dev
             if (_previewCatalog != null && _previewCatalogVersion == _draftVersion) return _previewCatalog;
             var files = (ShopsPlugin.Instance?.Files ?? new List<ShopFile>()).Where(f => f.Mod != _draft.Mod).ToList();
             files.Add(_draft);
-            _previewCatalog = ShopCatalog.Build(files);
+            _previewCatalog = ShopCatalog.Build(files, ShopsPlugin.Instance?.Options());
             _previewCatalogVersion = _draftVersion;
             return _previewCatalog;
         }
@@ -557,6 +557,7 @@ namespace POGContentLib.Shops.Dev
             var live = ShopScene.FindSlot(_selected);
             var rec = ShopRuntime.Records.TryGetValue(_selected, out var rr) ? rr : null;
             G.Label($"seller {(live?.m_shopKeeper != null ? ShopScene.SellerId(live.m_shopKeeper) : "-")}  faction {live?.m_shopFaction?.Value}  on sale now: {rec?.Picked ?? "(game's own choice)"}");
+            if (rec != null) foreach (var n in rec.Notes.Take(3)) G.Label("  ! " + n);
             var res = ResolveSelected();
             G.Label($"Chances with your draft (total weight {res.TotalWeight:0.##}):");
             foreach (var e in res.Entries.Take(9))

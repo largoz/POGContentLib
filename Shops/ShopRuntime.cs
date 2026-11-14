@@ -65,14 +65,17 @@ namespace POGContentLib.Shops
         // One choice per slot object per session: OnNetworkSpawn can run more than once for the same
         // in-scene slot (seen 2026-11-12: twice per hub load), and the second call must neither re-roll
         // nor mistake the first choice for the game's own content.
+        // Keyed by GetInstanceID (unique per object), not by the IL2CPP pointer, which a later object can get
+        // once this one is freed after a scene change.
         private sealed class Memo { public List<VanillaEntry> Vanilla; public string Picked; public NetworkObject Prefab; }
-        private static readonly Dictionary<IntPtr, Memo> _memo = new Dictionary<IntPtr, Memo>();
+        private static readonly Dictionary<int, Memo> _memo = new Dictionary<int, Memo>();
 
         internal static void OnSlotSpawning(ShopLocation slot)
         {
             var catalog = Catalog;
             if (catalog == null || slot == null || !IsHost) return;
-            if (_memo.TryGetValue(slot.Pointer, out var seen))
+            int key = slot.GetInstanceID();
+            if (_memo.TryGetValue(key, out var seen))
             {
                 if (seen.Prefab != null) { slot.m_networkPrefab = seen.Prefab; slot.m_lootTable = null; }
                 else if (seen.Picked == ShopIds.Nothing) { slot.m_networkPrefab = null; slot.m_lootTable = null; }
@@ -81,40 +84,44 @@ namespace POGContentLib.Shops
             string id = SellerTemplates.VariantSlotId(slot, catalog, _rng) ?? ShopScene.SlotId(slot);
             var vanilla = ShopScene.VanillaEntriesOf(slot);
             var memo = new Memo { Vanilla = vanilla };
-            _memo[slot.Pointer] = memo;
+            _memo[key] = memo;
             var resolved = catalog.Resolve(id, vanilla);
             var rec = new SlotRecord { SlotId = id, Slot = slot, Resolved = resolved, Vanilla = vanilla };
             _records[id] = rec;
             if (resolved.Untouched) return;
 
-            // Drop entries whose item is not loaded (its mod is missing, or a typo), then pick by weight.
-            var usable = new List<(SlotEntry e, NetworkObject prefab)>();
+            // Entries whose item is not loaded (its mod is missing, or a typo) take no part in the draw.
+            var prefabs = new Dictionary<string, NetworkObject>(StringComparer.Ordinal);
             foreach (var e in resolved.Entries)
             {
-                if (e.Weight <= 0) continue;
-                if (e.Item == ShopIds.Nothing) { usable.Add((e, null)); continue; }
+                if (!WeightedPick.Usable(e.Weight) || e.Item == ShopIds.Nothing || prefabs.ContainsKey(e.Item)) continue;
                 var prefab = ShopScene.ResolveItemPrefab(e.Item);
-                if (prefab != null) usable.Add((e, prefab));
-                else rec.Notes.Add($"{e.Item} (from {e.AddedBy}) is not loaded; skipped");
+                prefabs[e.Item] = prefab;
+                string usedBy = $"{e.AddedBy} in {id}";
+                if (prefab == null)
+                {
+                    rec.Notes.Add($"{e.Item} (from {e.AddedBy}) is not loaded; left out");
+                    ShopChecks.NotLoaded(e.Item, usedBy);
+                }
+                else ShopChecks.CheckPrice(e.Item, prefab, usedBy);
             }
-            double total = usable.Sum(u => u.e.Weight);
-            if (total <= 0)
+            Func<SlotEntry, bool> usable = e => e.Item == ShopIds.Nothing || (prefabs.TryGetValue(e.Item, out var p) && p != null);
+
+            var chosen = resolved.Pick(_rng.NextDouble(), usable);
+            if (chosen == null)
             {
                 rec.Picked = memo.Picked = ShopIds.Nothing;
                 rec.Notes.Add("no usable entry: the slot stays empty");
                 MakeEmpty(slot, rec);
                 return;
             }
-            double target = _rng.NextDouble() * total, acc = 0;
-            var chosen = usable[usable.Count - 1];
-            foreach (var u in usable) { acc += u.e.Weight; if (target < acc) { chosen = u; break; } }
-
-            rec.Picked = memo.Picked = chosen.e.Item;
-            memo.Prefab = chosen.prefab;
-            if (chosen.prefab == null) { MakeEmpty(slot, rec); return; }
-            slot.m_networkPrefab = chosen.prefab;
+            rec.Picked = memo.Picked = chosen.Item;
+            var chosenPrefab = chosen.Item == ShopIds.Nothing ? null : prefabs[chosen.Item];
+            memo.Prefab = chosenPrefab;
+            if (chosenPrefab == null) { MakeEmpty(slot, rec); return; }
+            slot.m_networkPrefab = chosenPrefab;
             slot.m_lootTable = null;
-            MelonLogger.Msg($"[POGContentLib] [Shops] {id}: {chosen.e.Item} ({100 * chosen.e.Weight / total:0.#}% of {usable.Count} candidate(s))");
+            MelonLogger.Msg($"[POGContentLib] [Shops] {id}: {chosen.Item} ({100 * resolved.ChanceAmong(chosen, usable):0.#}% of {resolved.Entries.Count(e => usable(e) && WeightedPick.Usable(e.Weight))} candidate(s))");
         }
 
         private static void MakeEmpty(ShopLocation slot, SlotRecord rec)
@@ -132,13 +139,15 @@ namespace POGContentLib.Shops
         internal static void OnSceneLoaded()
         {
             var catalog = Catalog;
-            if (catalog == null || catalog.ModSlots.Count == 0) return;
+            if (catalog == null) return;
             string scene = SceneManager.GetActiveScene().name;
-            if (!catalog.ModSlots.Values.Any(s => s.Def.Scene == scene)) return;
-            MelonCoroutines.Start(SpawnModSlotsWhenReady(scene));
+            bool modSlots = catalog.ModSlots.Values.Any(s => s.Def.Scene == scene);
+            bool vanillaRules = ShopChecks.VanillaTargetsIn(scene, catalog).Count > 0;
+            if (!modSlots && !vanillaRules) return;
+            MelonCoroutines.Start(WhenSlotsSpawned(scene, modSlots, vanillaRules));
         }
 
-        private static IEnumerator SpawnModSlotsWhenReady(string scene)
+        private static IEnumerator WhenSlotsSpawned(string scene, bool modSlots, bool vanillaRules)
         {
             // Wait for the session and for the scene's own sellers/slots to be spawned by NGO.
             float deadline = Time.realtimeSinceStartup + 60f;
@@ -150,7 +159,10 @@ namespace POGContentLib.Shops
             }
             if (!IsHost) yield break;
             yield return new WaitForSeconds(1f);
-            SpawnModSlots(scene);
+            if (modSlots) SpawnModSlots(scene);
+            if (!vanillaRules) yield break;
+            yield return new WaitForSeconds(ShopChecks.SceneCheckDelaySeconds - 1f);
+            if (SceneManager.GetActiveScene().name == scene) ShopChecks.ReportUnmatchedSlots(scene, Catalog);
         }
 
         internal static void SpawnModSlots(string scene)

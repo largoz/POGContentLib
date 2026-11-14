@@ -30,9 +30,10 @@ namespace POGContentLib.Shops
         public const string MerchantList = "PropList_EntranceCave_MerchantOrAdventurer";
         public const string Vanilla = "vanilla";
 
-        private static readonly HashSet<IntPtr> _injected = new HashSet<IntPtr>();
+        // By GetInstanceID, not the IL2CPP pointer: a later object can get a freed object's pointer.
+        private static readonly HashSet<int> _injected = new HashSet<int>();
         private static readonly Dictionary<string, int> _originalCopies = new Dictionary<string, int>(StringComparer.Ordinal);
-        private static readonly Dictionary<IntPtr, string> _variantOf = new Dictionary<IntPtr, string>();
+        private static readonly Dictionary<int, string> _variantOf = new Dictionary<int, string>();
 
         public static int Copies(double weight) => weight <= 0 ? 0 : Mathf.Max(1, Mathf.RoundToInt((float)weight));
 
@@ -42,7 +43,7 @@ namespace POGContentLib.Shops
             if (catalog == null || catalog.Sellers.Count == 0) return;
             foreach (var list in Resources.FindObjectsOfTypeAll<PropListAsset>())
             {
-                if (list == null || list.name != MerchantList || list.PropList == null || _injected.Contains(list.Pointer)) continue;
+                if (list == null || list.name != MerchantList || list.PropList == null || _injected.Contains(list.GetInstanceID())) continue;
                 var items = list.PropList.ToList();
                 int before = items.Count;
                 var added = new List<string>();
@@ -63,7 +64,7 @@ namespace POGContentLib.Shops
                 var arr = new Il2CppReferenceArray<GameObject>(items.Count);
                 for (int i = 0; i < items.Count; i++) arr[i] = items[i];
                 list.PropList = arr;
-                _injected.Add(list.Pointer);
+                _injected.Add(list.GetInstanceID());
                 MelonLogger.Msg($"[POGContentLib] [Shops] {MerchantList}: {before} -> {items.Count} entries ({string.Join(", ", added)}).");
             }
         }
@@ -81,14 +82,15 @@ namespace POGContentLib.Shops
             if (root == null) return null;
             string preset = ShopScene.CleanName(root.name);
 
-            if (!_variantOf.TryGetValue(root.gameObject.Pointer, out var variant))
+            int rootKey = root.gameObject.GetInstanceID();
+            if (!_variantOf.TryGetValue(rootKey, out var variant))
             {
                 var options = new List<(string id, double w)> { (Vanilla, _originalCopies.TryGetValue(preset, out var c) ? c : 1) };
                 options.AddRange(catalog.Sellers.Where(s => s.Def.Preset == preset).Select(s => (s.FullId, (double)Copies(s.Def.Weight))));
-                double total = options.Sum(o => o.w), target = rng.NextDouble() * total, acc = 0;
-                variant = options[options.Count - 1].id;
-                foreach (var o in options) { acc += o.w; if (target < acc) { variant = o.id; break; } }
-                _variantOf[root.gameObject.Pointer] = variant;
+                double total = options.Sum(o => o.w);
+                int pick = WeightedPick.Index(options, o => o.w, rng.NextDouble());
+                variant = pick >= 0 ? options[pick].id : Vanilla;
+                _variantOf[rootKey] = variant;
                 MelonLogger.Msg($"[POGContentLib] [Shops] dungeon merchant {preset} is {(variant == Vanilla ? "the vanilla one" : variant)} " +
                                 $"({string.Join(", ", options.Select(o => $"{o.id} {100 * o.w / total:0.#}%"))})");
             }

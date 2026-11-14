@@ -30,13 +30,13 @@ namespace POGContentLib.Shops
     /// <summary>Slots the rules left empty: their price tag is hidden so no stale price shows.</summary>
     internal static class ShopEmptySlots
     {
-        private static readonly HashSet<IntPtr> _empty = new HashSet<IntPtr>();
+        private static readonly HashSet<int> _empty = new HashSet<int>();   // GetInstanceID, not the reusable pointer
 
-        public static void Mark(ShopLocation slot) => _empty.Add(slot.Pointer);
+        public static void Mark(ShopLocation slot) => _empty.Add(slot.GetInstanceID());
 
         public static void HideTagIfEmpty(ShopLocation slot)
         {
-            if (slot == null || !_empty.Contains(slot.Pointer)) return;
+            if (slot == null || !_empty.Contains(slot.GetInstanceID())) return;
             // The whole tag (its board too), not only the text: a blank board looked like a broken tag.
             if (slot.m_priceTagText != null) SlotTemplates.TopChildOf(slot.m_priceTagText.transform, slot.transform).gameObject.SetActive(false);
         }

@@ -14,7 +14,7 @@ Design background: `docs/design/shops.md`. Example: `samples/ShopDemo/`.
   merchant dies, or can be stolen from.
 - Each vanilla slot either always offers the same item or draws one at random from a small pool.
 - The **price** is the item's own `ShopCost` (the game then adjusts it for reputation). Set `ShopCost`
-  on your `ModItemDefinition`.
+  on your `ModItemDefinition`: it defaults to 0, which a shop sells for free (the log warns).
 
 ## Chances are weights
 
@@ -30,6 +30,10 @@ never need to know about each other: three mods adding to one slot each just get
 Each vanilla candidate counts as weight **10** (per occurrence in its pool), so "weight 5" means "half as
 often as a vanilla item". `"nothing"` is a candidate too: give it a weight to make a slot sometimes
 empty.
+
+Players can change the vanilla weight: `VanillaWeight` under `[POGContentLib_Shops]` in
+`UserData/MelonPreferences.cfg` (read on the host, from the next scene; `0` = in a slot some mod adds to, only
+the mods' items come up). Write your weights against 10 all the same.
 
 ## The file
 
@@ -105,7 +109,7 @@ appears as often as w entries of its own would. It keeps the preset's NPC and lo
 - `add` is always allowed. A `patch` that touches another mod's slot or item must list that mod in
   `requires`, otherwise it is refused with a log line. Patching vanilla content needs nothing.
 - Every change is recorded per slot: the shop tools show who added and changed what.
-- An item whose mod is not installed is skipped (and logged); the remaining candidates share the chance.
+- An item whose mod is not installed is left out (and logged); the remaining candidates share the chance.
 
 ## Where the file goes
 
@@ -118,6 +122,16 @@ The library reads:
 
 A file with an error is refused with a log line naming the problem (`[POGContentLib] [Shops] ...`);
 unknown keys are reported as probable typos.
+
+Mistakes that leave a file valid but do nothing are logged too, once per game run, with the closest ids that
+do exist:
+
+| Mistake | When it is reported |
+|---|---|
+| A rule for a mod slot that mod does not define (`"slot": "BerryMod:berry_stnad"`) | when the files load |
+| An item that is not loaded: its mod is not installed, or a typo | before a session starts (mod items); when a slot uses it (game items) |
+| An item with `ShopCost` 0 | the same |
+| A rule for a game slot that is not in its scene | 5 s after the scene's slots spawned. A slot of a seller the game draws at random can be absent on some visits, so read this one with that in mind |
 
 ## The shop tools (in game)
 
