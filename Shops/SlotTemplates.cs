@@ -93,8 +93,8 @@ namespace POGContentLib.Shops
             go.SetActive(true);   // active itself, inactive through the holder
             var slot = go.GetComponent<ShopLocation>();
             var net = go.GetComponent<NetworkObject>();
-            slot.m_networkPrefab = null;
-            slot.m_lootTable = null;
+            slot.m_networkPrefabRef = null;
+            slot.m_lootTableRef = null;
             slot.m_shopKeeper = null;
             net.GlobalObjectIdHash = ContentRegistry.ComputeHash(HashNamespace, s.FullId);
 

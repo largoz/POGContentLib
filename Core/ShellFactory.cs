@@ -42,6 +42,11 @@ namespace POGContentLib.Core
         /// </summary>
         public static InventoryItem FindShell(string prefabName)
         {
+            // The game's own prefab list first (2026-11-14 build: the only place shells come from).
+            var listed = GamePrefabs.Find(prefabName);
+            var fromList = listed != null ? listed.GetComponent<InventoryItem>() : null;
+            if (fromList != null) return fromList;
+
             var all = Resources.FindObjectsOfTypeAll<InventoryItem>();
             InventoryItem live = null;
             foreach (var it in all)
@@ -82,7 +87,10 @@ namespace POGContentLib.Core
             var shell = FindShell(shellName);
             if (shell == null)
             {
-                MelonLogger.Warning($"[POGContentLib] Shell not in memory yet: {shellName} (will retry).");
+                // Before the game loads its prefab list (main menu) no shell is in memory: expected, retried at
+                // GamePrefabsLoaded. Once the list is loaded a missing shell is a real problem (renamed prefab).
+                if (GamePrefabs.IsLoaded)
+                    MelonLogger.Warning($"[POGContentLib] Shell '{shellName}' is not in the game's network prefab list; items on it cannot be built.");
                 return null;
             }
 

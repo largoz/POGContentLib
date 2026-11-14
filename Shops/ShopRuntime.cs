@@ -49,6 +49,7 @@ namespace POGContentLib.Shops
         {
             _records.Clear();
             _memo.Clear();
+            ShopChoices.Reset();
             SellerTemplates.Reset();
         }
 
@@ -77,8 +78,7 @@ namespace POGContentLib.Shops
             int key = slot.GetInstanceID();
             if (_memo.TryGetValue(key, out var seen))
             {
-                if (seen.Prefab != null) { slot.m_networkPrefab = seen.Prefab; slot.m_lootTable = null; }
-                else if (seen.Picked == ShopIds.Nothing) { slot.m_networkPrefab = null; slot.m_lootTable = null; }
+                if (seen.Prefab != null || seen.Picked == ShopIds.Nothing) ApplyChoice(slot, seen.Prefab);
                 return;
             }
             string id = SellerTemplates.VariantSlotId(slot, catalog, _rng) ?? ShopScene.SlotId(slot);
@@ -119,20 +119,23 @@ namespace POGContentLib.Shops
             var chosenPrefab = chosen.Item == ShopIds.Nothing ? null : prefabs[chosen.Item];
             memo.Prefab = chosenPrefab;
             if (chosenPrefab == null) { MakeEmpty(slot, rec); return; }
-            slot.m_networkPrefab = chosenPrefab;
-            slot.m_lootTable = null;
+            ApplyChoice(slot, chosenPrefab);
             MelonLogger.Msg($"[POGContentLib] [Shops] {id}: {chosen.Item} ({100 * resolved.ChanceAmong(chosen, usable):0.#}% of {resolved.Entries.Count(e => usable(e) && WeightedPick.Usable(e.Weight))} candidate(s))");
         }
 
         private static void MakeEmpty(ShopLocation slot, SlotRecord rec)
         {
-            // Both sources null: the slot offers nothing (see SHOPS_NATIVE.md for how CreateShopItems
-            // treats that). The price tag would still show the last price, so hide it.
-            slot.m_networkPrefab = null;
-            slot.m_lootTable = null;
+            // The price tag would still show the last price, so hide it.
+            ApplyChoice(slot, null);
             ShopEmptySlots.Mark(slot);
             MelonLogger.Msg($"[POGContentLib] [Shops] {rec.SlotId}: stays empty");
         }
+
+        /// <summary>
+        /// Hand the host's choice to the game: <paramref name="prefab"/> to sell, or null for an empty slot. The game
+        /// asks for it through LoadNetworkPrefab and friends when its CreateShopItems coroutine runs (ShopChoices).
+        /// </summary>
+        private static void ApplyChoice(ShopLocation slot, NetworkObject prefab) => ShopChoices.Set(slot, prefab);
 
         // ---- Mod slots ----
 
@@ -216,10 +219,33 @@ namespace POGContentLib.Shops
             else if (!string.IsNullOrEmpty(def.Faction) && !Enum.TryParse(def.Faction, out faction))
                 MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: unknown faction '{def.Faction}' (use {string.Join(", ", Enum.GetNames(typeof(Faction)))})");
 
-            go.GetComponent<NetworkObject>().Spawn(true);   // OnNetworkSpawn → OnSlotSpawning stocks it
+            go.GetComponent<NetworkObject>().Spawn(true);   // OnNetworkSpawn → OnSlotSpawning makes the choice
             if (faction != Faction.None && slot.m_shopFaction != null) slot.m_shopFaction.Value = faction;
             MelonLogger.Msg($"[POGContentLib] [Shops] placed {ms.FullId} at {pos:F2} next to {anchor.name}{(seller != null ? $", sold by {ShopScene.SellerId(seller)} ({faction})" : "")}");
+            MelonCoroutines.Start(StockIfMissed(slot, ms.FullId));
             return true;
+        }
+
+        /// <summary>
+        /// The 2026-11-14 build stocks a scene's slots in one batch a few seconds after they spawn (the CreateShopItems
+        /// coroutine is no longer started from OnNetworkSpawn; who starts it was not read). A slot placed after that
+        /// batch stayed empty (seen 2026-11-14). So once the scene's own slots hold their items, start the coroutine
+        /// for ours, unless the game's batch took it after all.
+        /// </summary>
+        private static IEnumerator StockIfMissed(ShopLocation slot, string id)
+        {
+            float deadline = Time.realtimeSinceStartup + 20f;
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                if (slot == null || !IsHost) yield break;
+                if (slot.CurrentShopItem != null) yield break;
+                if (ShopScene.SlotsInLoadedScenes().Any(s => s != null && s.GetInstanceID() != slot.GetInstanceID() && s.IsSpawned && s.CurrentShopItem != null)) break;
+                yield return new WaitForSeconds(0.5f);
+            }
+            yield return new WaitForSeconds(1f);
+            if (slot == null || !IsHost || slot.CurrentShopItem != null) yield break;
+            slot.StartCoroutine(slot.CreateShopItems());
+            MelonLogger.Msg($"[POGContentLib] [Shops] {id}: stocked by the library (placed after the scene's own slots were stocked).");
         }
 
         private static void AppendToSeller(NpcSpawner seller, ShopLocation slot)

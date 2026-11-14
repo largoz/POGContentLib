@@ -50,7 +50,9 @@ namespace POGContentLib.Core
             (typeof(LootTable), new[] { "m_treasureItems", "m_foodItems", "m_usefulItems", "m_bigItems", "m_shopItems" }),
             (typeof(InventoryLootTable), new[] { "Items" }),
             (typeof(ItemContainer), new[] { GameNames.Methods.ItemContainer_FromContainerData }),
-            (typeof(ShopLocation), new[] { "m_lootTable", "m_itemHolder", "m_priceTagText" }),
+            // 2026-11-14: spawners load by address (m_networkPrefab / m_lootTable became references).
+            (typeof(ShopLocation), new[] { "m_lootTableRef", "m_itemHolder", "m_priceTagText", "LoadLootTable", "CreateShopItems" }),
+            (typeof(SpawnerBase), new[] { "m_networkPrefabRef", "m_loadedPrefab", "LoadNetworkPrefab", "HasNetworkPrefab" }),
             (typeof(SpeakingStone), new[] { GameNames.Methods.SpeakingStone_Start, GameNames.Methods.SpeakingStone_SetEnabled }),
             (typeof(LocalizationManager), new[] { GameNames.Methods.LocalizationManager_GetTranslation }),
             (typeof(NetworkManager), new[]

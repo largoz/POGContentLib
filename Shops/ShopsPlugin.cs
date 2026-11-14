@@ -58,6 +58,14 @@ namespace POGContentLib.Shops
                 SellerTemplates.BuildPending(Catalog);
                 ShopRuntime.OnSceneLoaded();
             });
+            // The game's prefab list (2026-11-14 build): item templates now exist, and the donor slot for new
+            // slots may only be in memory from here on.
+            graph.AddSystem(PluginStage.GamePrefabsLoaded, Name, () =>
+            {
+                if (Catalog == null) Reload();
+                SellerTemplates.ApplyItemDisplays(Catalog);
+                SlotTemplates.BuildPending(Catalog);
+            });
             // Items are registered by now (they must be, to join a session): a rule naming a missing or
             // unpriced mod item is reported here, before anyone looks for it in a shop.
             graph.AddSystem(PluginStage.BeforeSessionStart, Name, () => ShopChecks.CheckModItems(Catalog));

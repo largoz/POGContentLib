@@ -40,6 +40,26 @@ Found by the first asserting driver run (`tests/RuntimeDriver/checks/`), 2026-11
 Port first, in this order: Items (load shells by address, or find where the game keeps them), then the shop hook on
 the new pipeline (read `CreateShopItems` / `LoadNetworkPrefab` / `HasNetworkPrefab` first), then the gate below.
 
+**Port status (2026-11-14, afternoon), from `explore=1` runs and the asserting run `checks-2`:**
+- What the game does now: nothing is in memory at the main menu; `NetworkHandler.EnsureNetworkPrefabsRegistered`
+  (called from `WaitForDeferredAssets` right before `StartHost`) loads `Assets/Gameplay/Data/CoreNetworkPrefabs.asset`
+  (647 entries, 218 items) by address; NGO registers it at `StartHost` (645 links in the hub). **`ForceSamePrefabs` is
+  false.** Addresses are asset paths; the file name is the prefab name. A slot's item is made by the `CreateShopItems`
+  coroutine a few seconds after the slots spawn, in one batch: fixed slot `LoadNetworkPrefab → CanSpawn →
+  InstantiateNetworkPrefab → SpawnNetworkPrefab`, pool slot `LoadLootTable → GetRandomItem`.
+- [x] Items: new stage `GamePrefabsLoaded` (postfix on `EnsureNetworkPrefabsRegistered`) builds the templates from the
+      game's list (`Core/GamePrefabs`); the session-start prefix makes the game load it if it has not. In game: built and
+      registered (`Network prefabs registered: 2 ok`).
+- [x] Shop hook: a chosen slot looks like a fixed slot holding the choice (`ShopChoices` + prefixes on
+      `HasNetworkPrefab`, `LoadNetworkPrefab`, `PreloadNetworkPrefab`, `HasLootTable`, `LoadLootTable`). In game: the
+      starter shop's bread slot held `ShopDemo:GlowBerry`, read back from the game's `CurrentShopItem`.
+- [x] Vanilla content of a slot is read by address (`Core/Addresses`: the fixed item's address, the pool's table loaded
+      with its own handle and released).
+- [ ] A new slot placed after the batch was not stocked: `StockIfMissed` starts its coroutine; not yet seen in game.
+- [ ] An empty choice ("nothing") and a pool slot given a mod item: rules in `checks/`, not yet seen in game (the run
+      stalled on the loading screen at load average 62: another session's build).
+- [ ] Dungeon merchants (`SellerTemplates`), clients, the dev tools: not touched yet.
+
 ### G. Check first (in this order; each one decides something)
 
 - [ ] **G1 Two players on the library's foundation** (= Milestone 0.3, never run since v0.1). Decides whether

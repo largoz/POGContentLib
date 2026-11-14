@@ -19,6 +19,9 @@ namespace POGContentLib.Core
         internal static void OnBeforeSessionStart(SessionRole role)
         {
             if (!CoreServices.Ready) return;
+            // The game normally loads its prefab list just before this (and GamePrefabsLoaded has built the
+            // mod templates); make sure of it, so registration below never runs with nothing built.
+            if (!GamePrefabs.IsLoaded && GamePrefabs.EnsureLoaded()) OnGamePrefabsLoaded();
             CoreServices.Network.RegisterAll();
             PluginRegistry.Dispatch(PluginStage.BeforeSessionStart);
 
@@ -33,6 +36,21 @@ namespace POGContentLib.Core
             {
                 MelonLogger.Warning($"[POGContentLib] Parity step failed ({role}): {ex.Message}");
             }
+        }
+
+        private static int _dispatchedList;
+
+        /// <summary>The game's prefab list is loaded: run GamePrefabsLoaded once per loaded list object.</summary>
+        internal static void OnGamePrefabsLoaded()
+        {
+            if (!CoreServices.Ready) return;
+            var list = GamePrefabs.Loaded;
+            if (list == null) return;
+            int id = list.GetInstanceID();
+            if (id == _dispatchedList) return;
+            _dispatchedList = id;
+            MelonLogger.Msg($"[POGContentLib] The game's network prefab list is loaded ({list.List?.Count} entries).");
+            PluginRegistry.Dispatch(PluginStage.GamePrefabsLoaded);
         }
 
         internal static void OnSessionStop()
@@ -59,6 +77,16 @@ namespace POGContentLib.Core
     internal static class Patch_StartClient
     {
         static void Prefix() => NetworkLifecycleHooks.OnBeforeSessionStart(SessionRole.Client);
+    }
+
+    [HarmonyPatch(typeof(Il2CppGame.Networking.NetworkHandler), nameof(Il2CppGame.Networking.NetworkHandler.EnsureNetworkPrefabsRegistered))]
+    internal static class Patch_EnsureNetworkPrefabsRegistered
+    {
+        static void Postfix()
+        {
+            try { NetworkLifecycleHooks.OnGamePrefabsLoaded(); }
+            catch (Exception ex) { MelonLogger.Error($"[POGContentLib] GamePrefabsLoaded failed: {ex}"); }
+        }
     }
 
     [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.Shutdown))]

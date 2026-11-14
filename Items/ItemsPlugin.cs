@@ -71,19 +71,27 @@ namespace POGContentLib.Items
             // On every scene load: build pending templates; host-side, inject loot into loaded tables.
             graph.AddSystem(PluginStage.SceneLoaded, Name, () =>
             {
-                foreach (var def in _defs) TryBuild(def);
-
-                // Link "leaves behind" references once every template exists — the target may well be
-                // registered after the item that points at it.
-                LinkConsumeSpawns();
-
-                // Retry any queued visual probes (prefabs load progressively across scenes).
-                Content.Diagnostics.RetryPending();
+                BuildPending();
 
                 var nm = NetworkManager.Singleton;
                 if (nm != null && nm.IsServer)
                     CoreServices.Loot.InjectIntoLoadedTables();
             });
+            // 2026-11-14 build: the shells arrive with the game's prefab list, right before the session starts
+            // (after the last menu scene load), so build there too or nothing is ready to register.
+            graph.AddSystem(PluginStage.GamePrefabsLoaded, Name, BuildPending);
+        }
+
+        private void BuildPending()
+        {
+            foreach (var def in _defs) TryBuild(def);
+
+            // Link "leaves behind" references once every template exists — the target may well be
+            // registered after the item that points at it.
+            LinkConsumeSpawns();
+
+            // Retry any queued visual probes (prefabs load progressively across scenes).
+            Content.Diagnostics.RetryPending();
         }
 
         private void TryBuild(ModItemDefinition def)

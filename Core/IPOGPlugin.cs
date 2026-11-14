@@ -24,7 +24,12 @@ namespace POGContentLib.Core
 
         /// <summary>NetworkManager.Shutdown: NGO runtime prefabs are session-scoped and dropped
         /// on shutdown — reset flags so registration re-runs on the next session start.</summary>
-        SessionStop
+        SessionStop,
+
+        /// <summary>The game has loaded its own network prefab list (NetworkHandler.EnsureNetworkPrefabsRegistered,
+        /// right before it hosts or joins): since the 2026-11-14 update this is the first moment the vanilla item
+        /// shells are in memory. Runs again whenever the game calls it; systems must be idempotent.</summary>
+        GamePrefabsLoaded
     }
 
     /// <summary>

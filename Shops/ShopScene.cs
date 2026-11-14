@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Il2Cpp;
+using Il2CppInventory;
 using Il2CppGame.Spawning;
 using POGContentLib.Core;
 using POGContentLib.Shops.Model;
@@ -98,21 +99,37 @@ namespace POGContentLib.Shops
         }
 
         /// <summary>What the game itself would sell in this slot, as catalog entries.</summary>
+        /// <summary>
+        /// What the game itself would sell in this slot, as catalog entries. 2026-11-14 build: the slot holds address
+        /// references; the fixed item's name comes from its address, a pool's items from its loot table (loaded with a
+        /// handle of our own and released). Call before the slot's choice is applied (the patches in ShopHarmony
+        /// change HasNetworkPrefab/HasLootTable for chosen slots).
+        /// </summary>
         public static List<VanillaEntry> VanillaEntriesOf(ShopLocation slot)
         {
             var list = new List<VanillaEntry>();
-            if (slot.m_networkPrefab != null)
-                list.Add(new VanillaEntry(ShopIds.VanillaItem(CleanName(slot.m_networkPrefab.name)), 1));
-            else if (slot.m_lootTable != null && slot.m_lootTable.Items != null)
+            if (slot.HasNetworkPrefab)
             {
-                var counts = new Dictionary<string, int>();
-                foreach (var it in slot.m_lootTable.Items)
+                string name = Addresses.PrefabNameOf(slot.m_networkPrefabRef) ?? (slot.m_loadedPrefab != null ? CleanName(slot.m_loadedPrefab.name) : null);
+                if (name != null) list.Add(new VanillaEntry(ShopIds.VanillaItem(name), 1));
+            }
+            else if (slot.HasLootTable)
+            {
+                var counts = Addresses.ReadNow<InventoryLootTable, Dictionary<string, int>>(slot.m_lootTableRef?.AssetGUID, table =>
                 {
-                    if (it == null) continue;
-                    var id = ShopIds.VanillaItem(CleanName(it.gameObject.name));
-                    counts[id] = counts.TryGetValue(id, out var c) ? c + 1 : 1;
-                }
-                foreach (var kv in counts) list.Add(new VanillaEntry(kv.Key, kv.Value));
+                    var c = new Dictionary<string, int>();
+                    var items = table.Items;
+                    if (items == null) return c;
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        var it = items[i];
+                        if (it == null) continue;
+                        var id = ShopIds.VanillaItem(CleanName(it.gameObject.name));
+                        c[id] = c.TryGetValue(id, out var n) ? n + 1 : 1;
+                    }
+                    return c;
+                });
+                if (counts != null) foreach (var kv in counts) list.Add(new VanillaEntry(kv.Key, kv.Value));
             }
             return list;
         }
