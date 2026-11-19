@@ -66,6 +66,18 @@ the PC's test changes after each session.
       everyone" (network content through POGContentLib, or listed in a config) or "own only" (the default); a window in
       game lists missing required mods, different versions and extra ones, does not block play, closes with a button,
       and is copied to the log.
+      **Built 2026-11-19, not shown over LAN yet.** POG Mod Check 0.1.0, `/run/media/tim/Opus/Projects/POGModCheck`
+      (local git b3b18a0; the GitHub repository is not created: that waits for the user's word). Named message
+      `POGModCheck/List`; "required" = the assemblies that registered content (`Content.ContentAssemblies`, new
+      here, f577930) or the config's `Required`; window top right, F10 or its button; log on both sides. Unit tests
+      green (19: the list format, every kind of difference, own-only mods never reported). On the PC alone (run 13,
+      09:28): it loads, lists the 12 mods with hashes that match the deployed DLLs, marks POGContentLib, POG Custom
+      Items and ShopDemo required and the rest own only, and registers its message when the host starts. Not seen:
+      the exchange with a client and the window, because the laptop's battery ran out at 09:23 (6% at run 12,
+      then off). Next: the laptop on its charger, POG Mod Check on both, a client without ShopDemo (P4 setup), and
+      one with everything: screenshots of the window on both machines and the F10 close.
+      Also to decide with it: D12 (price tags over empty slots for a client without the mod), and shop files
+      without a DLL (they add slots, so they are network content, but there is no melon to list).
 
 ## Pre-release gate — checks and rework before anything is published (review of 2026-11-14)
 
