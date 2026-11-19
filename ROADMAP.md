@@ -61,13 +61,24 @@ the PC's test changes after each session.
       copy is `_Modding/ModSource/_archive/POGContentLib-2026-08` (commit 54158ad there, not pushed).
       POGCustomStones and the old POGCustomItems copy now build against this repository; POGSpawner does too, but
       fails on the game, not the library: `Bucket.Depth` is gone (`WorldProbe.cs:51`).
-- [ ] **P7 Mod-mismatch window** (a separate mod, own repo `largoz/<name>`): after connecting, host and client exchange
+- [x] **P7 Mod-mismatch window** (a separate mod, own repo `largoz/<name>`): after connecting, host and client exchange
       their mod lists (id, version, DLL hash) by an NGO named message, not the Steam lobby; each mod is "required for
       everyone" (network content through POGContentLib, or listed in a config) or "own only" (the default); a window in
       game lists missing required mods, different versions and extra ones, does not block play, closes with a button,
       and is copied to the log.
-      **Built 2026-11-19, not shown over LAN yet.** POG Mod Check 0.1.0, `/run/media/tim/Opus/Projects/POGModCheck`
-      (local git b3b18a0; the GitHub repository is not created: that waits for the user's word). Named message
+      **Shown over LAN 2026-11-19 (run 15, `pog-runs/lan-1/run15`), PC host and laptop client, POG Mod Check 51a118a
+      on both:** (1) client without ShopDemo: host logs and shows "Player 1 joined with different mods / Extra:
+      ShopDemo 1.0.0", client "Your mods differ from the host's / Missing: ShopDemo 1.0.0" (`host-modcheck-window.png`,
+      `client-modcheck-window-3.png`); the game goes on on both; F10 on the laptop closes the window
+      (`client-after-f10.png`: pressed 13:41:24, gone at 13:41:42, client still connected). F10 on the PC was not
+      pressed: the user was working in another window, and the close is the same code. (2) client without POG Mod
+      Check: 15 s after it joined the host logs "Player 2 sent no mod list" and stacks "Player 2: no mod check" under
+      the first report (`host-no-modcheck.png`). (3) client with everything: "Mods match player 3 (8 mods there, 3
+      required)" and "Mods match the host (12 mods there, 3 required)"; the mods only one side has (POG Fonts,
+      BrightMod, Player Limit, POVChanger on the PC) are not reported; no false "no mod list" for player 3. No NGO
+      error in Player.log. Not run: a host without POG Mod Check (the client's "host did not answer" path; unit
+      logic only). Repository `largoz/POGModCheck`, public, pushed 2026-11-19. Defects found: D13, D14.
+      Build history: POG Mod Check 0.1.0 (local git b3b18a0 at first). Named message
       `POGModCheck/List`; "required" = the assemblies that registered content (`Content.ContentAssemblies`, new
       here, f577930) or the config's `Required`; window top right, F10 or its button; log on both sides. Unit tests
       green (19: the list format, every kind of difference, own-only mods never reported). On the PC alone (run 13,
@@ -362,6 +373,14 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
       starter shop, nothing above them). The slot is a scene object every peer has; only its item is a mod
       prefab the client cannot create. Nothing in the library can run on such a client; the host could keep mod
       items out of vanilla slots when a peer lacks the mod, once it knows (P7's mod list). Decide with P7.
+- [ ] **D13 The game's toasts cover POG Mod Check's window** (run 15, laptop: at 13:35 an "Added to … Glow Berry"
+      toast in the top right hid the window; at 13:38, the toast gone, the window was there again). The game's
+      canvas draws over the IMGUI window. Move the window out of the toasts' corner (top centre, or below them).
+- [ ] **D14 POG Mod Check closes on F10, which POGSpawner also uses** (its panel toggles on F10, per MAP.md): with
+      both installed, closing the report also toggles the spawner. POGSpawner is internal; make the key a setting.
+- POGLanTest (the test tool), run 15: the laptop's screenshots covered only the top-left 1536x864 of its 1920x1080
+  screen (125% scaling, a DPI-unaware PowerShell), so the window at the right edge looked missing; `shot.ps1` and
+  `shot-watch.ps1` now call `SetProcessDPIAware` and capture the whole screen.
 - POGLanTest (the test tool), run 6–7: `ScreenCapture.CaptureScreenshot` fails under Il2CppInterop ("Method not
   found: ReadOnlySpan`1.GetPinnableReference") (D11, tool only), so screenshots are taken from outside the game.
 - Not the library, seen the same night: POG Timer 1.0.2 (Thunderstore) logged "Hook failed" four times a second
