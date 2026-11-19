@@ -27,12 +27,15 @@ namespace POGContentLib.Core
             Diamond,     // default
             Coin,
             Gem,
+            /// <summary>A big item, carried in both hands (the item's <c>Big</c> picks it on its own).</summary>
+            BigItem,
         }
 
         public static string ShellPrefabName(ItemShellKind kind) => kind switch
         {
             ItemShellKind.Coin => GameNames.Shells.Coin,
             ItemShellKind.Gem => GameNames.Shells.GemEmerald,
+            ItemShellKind.BigItem => GameNames.Shells.BigItem,
             _ => GameNames.Shells.Diamond,
         };
 
@@ -124,6 +127,11 @@ namespace POGContentLib.Core
 
             // Strip the dangerous self-spawn chain inherited from some shells.
             item.m_spawnOnDestroy = null;
+
+            // The big-item shell is a bucket decoration: without this the mod item would decorate the bucket.
+            // Same on every peer (each builds its own template), so the network behaviours still match.
+            foreach (var upgrade in go.GetComponentsInChildren<Il2Cpp.BucketUpgrade>(true))
+                if (upgrade != null) UnityEngine.Object.DestroyImmediate(upgrade);
 
             _registry.RegisterPrefab(netObj);
             MelonLogger.Msg($"[POGContentLib] Built template {go.name} (shell={shellName}, hash={hash:X8}).");

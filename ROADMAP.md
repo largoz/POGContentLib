@@ -31,7 +31,9 @@ the PC's test changes after each session.
       the game's own path (`NetworkHandler.Disconnect`, `NetworkMenu.OnDisconnected` → main menu), joined again
       6 s later, got its player and did the whole test after that. (Run 8: leaving with `NetworkManager.Shutdown`
       alone kept the client in the hub scene, and every rejoin came back without a player: a POGLanTest defect,
-      fixed.) A real "Spawning Character..." hang was not reproduced on demand (seen once, run 5).
+      fixed.) A real hang came by itself in run 12 (09:20, the laptop's battery at 6%): no player 45 s after the
+      hub, a black screen; the client left through the menu, joined again 9 s later, got its player and ran the
+      whole big-item test after that.
 - [x] **P3 Pass and bucket:** an item dropped by one player and picked up by the other, and put in the bucket, both ways.
       **Done 2026-11-19 (run 7, 08:48), both logs agree:** the client bought the `berry_stand` berry (gold 7 → 0) and
       dropped it; the host picked it up (owner 0) and put it in the bucket; the client saw it in the bucket (listed
@@ -47,9 +49,18 @@ the PC's test changes after each session.
       exception (`Player.log`), its items stayed in place; the client's 6 exceptions are its missing Steam
       (`SteamClient.get_Name`, achievements), as in every client run. Nothing tells either player what is missing:
       that is P7.
-- [ ] **P5 D5–D7:** bundle model under `PickupItem`/`HeldItem`, journal entries, big-item shell: fix, or record why not.
-- [ ] **P6 One library:** each file only in the old `_Modding/ModSource/POGContentLib` copy ported or rejected (reason
-      written down), then the old copy archived.
+- [~] **P5 D5–D7:** bundle model under `PickupItem`/`HeldItem`, journal entries, big-item shell: fix, or record why not.
+      D6 and D7 fixed and seen in game (runs 11–12, below). D5 not fixed, and why: see D5.
+- [x] **P6 One library:** each file only in the old `_Modding/ModSource/POGContentLib` copy ported or rejected (reason
+      written down), then the old copy archived. **Done 2026-11-19.** Ported: the OBJ tier (D2) and the OBJ section
+      of `CUSTOM_ASSETS.md` (rewritten for build 26668562; the bundle section's Unity version corrected to
+      6000.3.24f1). Rejected: `ShopFactory` and the old `ShopsApi` (the Shops module replaced them; written against
+      fields the 2026-11-14 update removed), `CyrillicFallback`, `LocalizationProbe` and the font probes (POGFonts'
+      job), `ColliderProbe` and `ProbeObj` (the OBJ loader logs the same facts), and older forms of code this
+      repository has in a newer form. The table with each reason is in `_Modding/ModSource/_archive/README.md`; the
+      copy is `_Modding/ModSource/_archive/POGContentLib-2026-08` (commit 54158ad there, not pushed).
+      POGCustomStones and the old POGCustomItems copy now build against this repository; POGSpawner does too, but
+      fails on the game, not the library: `Bucket.Depth` is gone (`WorldProbe.cs:51`).
 - [ ] **P7 Mod-mismatch window** (a separate mod, own repo `largoz/<name>`): after connecting, host and client exchange
       their mod lists (id, version, DLL hash) by an NGO named message, not the Steam lobby; each mod is "required for
       everyone" (network content through POGContentLib, or listed in a config) or "own only" (the default); a window in
@@ -273,8 +284,28 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
       the content id as the name); an item without a name was not run in game.
 - [ ] **D5 `AttachBundlePrefab` parents the model under the item's root** (from the code): visible in the inventory,
       wrong layer in the hands, and the shell's renderers come back on `SetVisibility(true)`. Also in v0.2 below.
-- [ ] **D6 Mod items are never in the journal** (from the code: the game builds no item entries). Also in v0.2.
-- [ ] **D7 No big-item shell** (from the code): `Big = true` keeps the diamond's grips and size. Also in v0.2.
+      **Not fixed (2026-11-19), and why:** the fix (the model under `PickupItem`, a copy under `HeldItem`, the
+      shell's renderers removed rather than switched off) can only be shown with a real AssetBundle, and none
+      exists: building one needs the game's Unity editor (6000.3.24f1), which is not installed here and needs the
+      user's Unity account. The whole bundle tier is unproven on this build anyway (Milestone 0.2). The recipe
+      stays in the v0.2 list; do it together with the first bundle.
+- [x] **D6 Mod items are never in the journal** (from the code: the game builds no item entries). Also in v0.2.
+      **Fixed 2026-11-19** (`Items/JournalEntries.cs`): each journal tab's entries are placed in its UI
+      (`UI_JournalGroupItems.m_entries`); right before a tab initializes, every mod item for that tab gets a copy
+      of one of its entries with the item's `JournalEntryDataItem` (name and description terms, icon, values) and
+      picture. New: `ModItemDefinition.JournalGroup` (default from `ItemType`) and `ShowInJournal`. In game: run 11,
+      host and client, the berry listed under Food, shown after it was bought (client) and picked up (host);
+      run 12, the client's journal opened at the sack, its name and description in the detail page
+      (`run12/lap-shots/client-092219-04-journal.png`). An item with no icon of its own now takes its shell's for
+      the entry (the sack showed another entry's picture; built, not run yet).
+- [x] **D7 No big-item shell** (from the code): `Big = true` keeps the diamond's grips and size. Also in v0.2.
+      **Fixed 2026-11-19:** `ItemShellKind.BigItem` = `BigItem_Decoration_01` (the starter shop's fur roll: grips
+      for both hands, `ActiveItem_Throwable`; its `BucketUpgrade` is taken off the template, or the mod item would
+      decorate the bucket). `Big = true` on the default shell picks it. The sample has a big item (Sack of Glow
+      Berries). In game, run 12: built on that shell on both peers, sold in the decoration slot; the client bought
+      it (gold 14 → 7): in hands, `m_isBigItem` true, `BucketUpgrade` 0, grips LeftHand/RightHand/Generic/
+      Backpack/Table/ItemRack; dropped again. The vanilla big items, for reference: `BigItem_Decoration_01` and
+      `BigItem_TreasureDisplay` carry `BucketUpgrade`, `BigItem_Scrap_Cog` is the game's 'BigCog'.
 - [ ] **D8 A mod item in a vanilla slot takes the pose that slot gives its own item** (in game, host and client,
       2026-11-19): the Ember Lantern lies on its side in the torch slot, where the torch, the key ring and the rock lie
       flat too; the glow berry stands upright in the bread slot. The game places the item by the slot's holder

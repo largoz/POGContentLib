@@ -15,6 +15,9 @@ namespace POGContentLib.Core
             public const string Diamond = "Item_Diamond";   // default: InventoryItem+NetworkObject+Rigidbody, no VoIP/VFX
             public const string Coin = "Item_Coin";
             public const string GemEmerald = "Item_Gem_Emerald";
+            /// <summary>Big-item shell: the starter shop's fur roll (two-hand grips, ActiveItem_Throwable). Its
+            /// BucketUpgrade (a bucket decoration) is taken off the template (D7, build 26668562).</summary>
+            public const string BigItem = "BigItem_Decoration_01";
         }
 
         /// <summary>HDRP material color properties used when tinting a reskin (ItemVisuals).</summary>

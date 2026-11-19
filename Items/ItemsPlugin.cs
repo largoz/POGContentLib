@@ -46,6 +46,46 @@ namespace POGContentLib.Items
         /// <summary>Whether its template has been built (and can be registered and sold).</summary>
         public bool IsBuilt(string fullId) => _built.Contains(fullId);
 
+        /// <summary>The item's name term, which is also its discovery id (m_itemTooltipID).</summary>
+        internal static string NameKeyOf(ModItemDefinition def)
+            => !string.IsNullOrEmpty(def.TooltipKey) ? def.TooltipKey : $"MOD/{def.ModId}/{def.ContentId}";
+
+        internal static string DescriptionKeyOf(ModItemDefinition def)
+            => !string.IsNullOrEmpty(def.TooltipDescriptionKey) ? def.TooltipDescriptionKey : $"MOD/{def.ModId}/{def.ContentId}_Desc";
+
+        internal static Il2CppGame.Journal.ItemGroup JournalGroupOf(ModItemDefinition def)
+        {
+            if (def.JournalGroup.HasValue) return def.JournalGroup.Value;
+            if ((def.ItemType & ItemType.Food) != 0) return Il2CppGame.Journal.ItemGroup.Food;
+            if ((def.ItemType & ItemType.Treasure) != 0) return Il2CppGame.Journal.ItemGroup.Treasure;
+            return Il2CppGame.Journal.ItemGroup.Other;
+        }
+
+        /// <summary>Registered definitions, for the journal (which can be built before any template).</summary>
+        internal IReadOnlyList<ModItemDefinition> Definitions => _defs;
+
+        // One sprite per item, shared by the item and its journal entry. Not cached while unresolved: a game
+        // sprite named by IconSpriteName may only be loaded later.
+        private readonly Dictionary<string, Sprite> _icons = new();
+
+        internal Sprite IconFor(ModItemDefinition def)
+        {
+            string full = ContentRegistry.FullId(def.ModId, def.ContentId);
+            if (_icons.TryGetValue(full, out var cached) && cached != null) return cached;
+            Sprite icon = null;
+            if (def.Icon != null) icon = def.Icon;
+            else if (!string.IsNullOrEmpty(def.IconSpriteName)) icon = GameAssets.FindSprite(def.IconSpriteName);
+            else if (!string.IsNullOrEmpty(def.IconFile))
+            {
+                try { icon = AssetLoader.LoadPngAsSprite(def.IconFile); }
+                catch (Exception ex) { MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: icon file '{def.IconFile}': {ex.Message}"); }
+                if (icon != null)
+                    MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: icon from '{System.IO.Path.GetFileName(def.IconFile)}' ({icon.texture.width}x{icon.texture.height}).");
+            }
+            if (icon != null) _icons[full] = icon;
+            return icon;
+        }
+
         /// <summary>Resolve a definition by hash (used by ModItemHandle).</summary>
         internal static ModItemDefinition ResolveDefinition(uint hash)
             => CoreServices.Content.GetDefinitionByHash(hash) as ModItemDefinition;
@@ -110,7 +150,11 @@ namespace POGContentLib.Items
             string full = ContentRegistry.FullId(def.ModId, def.ContentId);
             if (_built.Contains(full)) return;
 
-            var template = CoreServices.Shells.BuildItemTemplate(def.ShellKind, def.ModId, def.ContentId);
+            // A big item on the default shell would keep the diamond's one-hand grips and size (D7): it gets the
+            // big-item shell unless the definition chose a shell itself.
+            var shellKind = def.ShellKind;
+            if (def.Big && shellKind == ShellFactory.ItemShellKind.Diamond) shellKind = ShellFactory.ItemShellKind.BigItem;
+            var template = CoreServices.Shells.BuildItemTemplate(shellKind, def.ModId, def.ContentId);
             if (template == null) return; // shell not in memory yet — retry on the next scene load
 
             ApplyIdentity(template, def);
@@ -152,36 +196,21 @@ namespace POGContentLib.Items
 
             // Icon: direct override wins, then a game sprite by name, then a PNG file of the mod's own.
             // None of them: the shell's icon stays (D10: the glow berry showed the diamond in the client's toast).
-            if (def.Icon != null) item.m_itemIcon = def.Icon;
-            else if (!string.IsNullOrEmpty(def.IconSpriteName))
-            {
-                var sprite = GameAssets.FindSprite(def.IconSpriteName);
-                if (sprite != null) item.m_itemIcon = sprite;
-            }
-            else if (!string.IsNullOrEmpty(def.IconFile))
-            {
-                Sprite fileIcon = null;
-                try { fileIcon = AssetLoader.LoadPngAsSprite(def.IconFile); }
-                catch (Exception ex) { MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: icon file '{def.IconFile}': {ex.Message}"); }
-                if (fileIcon != null)
-                {
-                    item.m_itemIcon = fileIcon;
-                    MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: icon from '{System.IO.Path.GetFileName(def.IconFile)}' ({fileIcon.texture.width}x{fileIcon.texture.height}).");
-                }
-            }
+            var icon = Instance?.IconFor(def);
+            if (icon != null) item.m_itemIcon = icon;
             else if (def.Visual?.Kind == ItemVisualKind.ObjFile)
                 MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: a model of its own but no icon (Icon, IconSpriteName or IconFile): it shows the shell's icon.");
+
+            // Journal: the tab and whether it is listed (the entry itself is added by JournalEntries).
+            item.m_journalGroup = JournalGroupOf(def);
+            item.m_showInJournal = def.ShowInJournal;
 
             // Tooltip/name. Registering the translation is only half of it — the item must also POINT
             // at our term, otherwise it keeps the shell's ids and shows "Diamond / Best rock in world".
             // The ids live on NetworkInteractableBase (InventoryItem's base): m_itemTooltipID and
             // m_itemTooltipDescriptionID, which UIItemTooltip reads via GetTooltipTitleId/DescriptionId.
-            string nameKey = !string.IsNullOrEmpty(def.TooltipKey)
-                ? def.TooltipKey
-                : $"MOD/{def.ModId}/{def.ContentId}";
-            string descKey = !string.IsNullOrEmpty(def.TooltipDescriptionKey)
-                ? def.TooltipDescriptionKey
-                : $"MOD/{def.ModId}/{def.ContentId}_Desc";
+            string nameKey = NameKeyOf(def);
+            string descKey = DescriptionKeyOf(def);
 
             // Always our own keys, with or without the texts: the game uses m_itemTooltipID as the item's discovery id
             // too (InventoryItem.IsDiscovered, build 26668562), so a kept shell key made the item "Diamond" and

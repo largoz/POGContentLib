@@ -35,7 +35,21 @@ namespace ShopDemo
                 ShopCost = 7,
                 Capabilities = { new EatCapability { CopyFrom = "Item_Apple", HealthOnEating = 15f, BodyValue = 1 } },
             });
-            LoggerInstance.Msg("ShopDemo: Glow Berry registered (shop rules in pogshop.json).");
+            // A big item: carried in both hands, one at a time. Big = true picks the library's big-item shell
+            // (the starter shop's fur roll, which also gives it its look here).
+            Content.Items.Register(new ModItemDefinition
+            {
+                ModId = "ShopDemo",
+                ContentId = "BerrySack",
+                DisplayName = "Sack of Glow Berries",
+                DisplayDescription = "Too heavy for one hand. Smells of apples, somehow.",
+                Big = true,
+                ItemType = Il2Cpp.ItemType.Item,
+                JournalGroup = Il2CppGame.Journal.ItemGroup.Other,
+                GoldValue = 20,
+                ShopCost = 7,
+            });
+            LoggerInstance.Msg("ShopDemo: Glow Berry and Sack of Glow Berries registered (shop rules in pogshop.json).");
         }
 
         // The model ships next to pogshop.json: Mods/<Author>-ShopDemo/ under Gale, nested deeper under r2modman.

@@ -144,6 +144,11 @@ namespace POGContentLib.Items
         /// <summary>Minimap marker: Default, Player, Enemy, Food, Treasure, Crumb, Door, NPC (enum
         /// <c>Il2Cpp.MapIconType</c>; before the 2026-11-06 game update it was nested in PassiveItem_Map).</summary>
         public MapIconType MapIcon { get; set; } = MapIconType.Default;
+        /// <summary>The journal tab the item is listed under (Food, Treasure, Tools, Equipment, Weapons, Relics,
+        /// Other). Null: Food for a <c>Food</c> item, Treasure for a <c>Treasure</c> item, otherwise Other.</summary>
+        public Il2CppGame.Journal.ItemGroup? JournalGroup { get; set; }
+        /// <summary>List the item in the journal (it shows once the item has been discovered). Default true.</summary>
+        public bool ShowInJournal { get; set; } = true;
 
         // — Numeric properties. Also the drop-weight knobs in the value-budget loot spawner (§5). —
         /// <summary>Loot budget / treasure value (matched against LootValueTable_Gold levels).</summary>
