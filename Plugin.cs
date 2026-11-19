@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HarmonyLib;
 using Il2CppInterop.Runtime.Injection;
 using MelonLoader;
@@ -9,6 +10,9 @@ using POGContentLib.Items;
 [assembly: MelonGame(null, "Pit of Goblin")]
 // Load earlier than content mods so their OnInitializeMelon can call Content.*.
 [assembly: MelonPriority(-1000)]
+// The patches are applied one class at a time (PatchEachClassIndependently); without this MelonLoader patched the
+// whole assembly too, and every prefix and postfix ran twice (CheckEachPatchOnce, 2026-11-19: 26 of 26).
+[assembly: HarmonyDontPatchAll]
 
 namespace POGContentLib
 {
@@ -103,10 +107,42 @@ namespace POGContentLib
 
         public override void OnGUI() => POGContentLib.Shops.Dev.ShopDevTools.OnGUI();
 
+        private bool _patchesChecked;
+
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
+            if (!_patchesChecked) { _patchesChecked = true; CheckEachPatchOnce(); }
             // Game shell prefabs are now in memory — build any templates not built yet.
             PluginRegistry.Dispatch(PluginStage.SceneLoaded);
+        }
+
+        /// <summary>
+        /// Every patch of this library must run once per call of the game's method. MelonLoader patches a mod's whole
+        /// assembly by itself unless the assembly opts out, and <see cref="PatchEachClassIndependently"/> patches it
+        /// again: then each prefix and postfix ran twice (found 2026-11-19: a client asked the host twice about one
+        /// slot). Checked at the first scene, when every patching has happened; the log says either way.
+        /// </summary>
+        private void CheckEachPatchOnce()
+        {
+            try
+            {
+                int methods = 0, twice = 0;
+                foreach (var original in HarmonyInstance.GetPatchedMethods())
+                {
+                    var info = HarmonyLib.Harmony.GetPatchInfo(original);
+                    if (info == null) continue;
+                    methods++;
+                    var mine = info.Prefixes.Concat(info.Postfixes).Concat(info.Transpilers).Concat(info.Finalizers)
+                        .Where(p => p.owner == HarmonyInstance.Id);
+                    foreach (var g in mine.GroupBy(p => p.PatchMethod).Where(g => g.Count() > 1))
+                    {
+                        twice++;
+                        MelonLogger.Warning($"[POGContentLib] Harmony: {original.DeclaringType?.Name}.{original.Name} has {g.Key.DeclaringType?.Name}.{g.Key.Name} {g.Count()} times.");
+                    }
+                }
+                MelonLogger.Msg($"[POGContentLib] Harmony: {methods} game method(s) patched; {(twice == 0 ? "each patch once" : $"{twice} patch(es) more than once")}.");
+            }
+            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] Harmony: could not check the patches: {ex.Message}"); }
         }
     }
 }
