@@ -59,6 +59,8 @@ cleanup() {
   for f in "${deployed[@]}"; do rm -rf "$f"; done
   rm -f "$CFG"
   for f in "${test_shops[@]}"; do rm -f "$f"; done
+  # The folders made for the config and the test shops go too, only when nothing else is in them.
+  rmdir "$PROFILE/UserData/POGContentLib/Shops" "$PROFILE/UserData/POGContentLib" 2>/dev/null
   echo "Mods/ now:"; ls "$MODS"
 }
 trap cleanup EXIT

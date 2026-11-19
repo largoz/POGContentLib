@@ -197,10 +197,20 @@ the new pipeline (read `CreateShopItems` / `LoadNetworkPrefab` / `HasNetworkPref
       `JoinDiscovery` (LAN); they are in the proxies, whether they work is unknown. Memory for two
       instances on a 16 GB box is unmeasured.
     - Otherwise: a second PC with a second Steam account (`RUNTIME_TESTS.md`).
-- [ ] **G2 Dump the game's network prefab list** at session start (the driver prints
+- [x] **G2 Dump the game's network prefab list** at session start (the driver prints
       `NetworkManager.NetworkConfig.Prefabs`, name + hash). Decides whether a new slot prefab is needed at
       all: if the standalone vanilla slot prefab (the `ShopLocation` the templates are copied from) is
       already registered, the host can spawn that one as is (see R1).
+      **Done 2026-11-19, game build 26668562, asserting run `pog-runs/checks-6` (host only, 0 failures, 7 driver
+      checks):** it is. 649 prefabs registered; the game's own list holds two standalone slot prefabs, `ShopLocation`
+      (1055139892) and `ShopLocationSlim` (3511405297), both with a price tag and an item holder, both registered;
+      the library's templates are "copied from 'ShopLocation'". Against `checks-5` (2026-11-14, build 26652532): the
+      same two hashes, nothing removed or renamed, one prefab more (`ModItem_ShopDemo_BerrySack`, the sample's newer
+      item). The library still registers one prefab of its own per mod slot (`POGShopSlot|ShopDemo:berry_stand`,
+      1679230904): that is what R1 can drop. Not checked here: the list on a client by hash (a client without the
+      content mods had 645 against the host's 648 in run 10, three fewer = the three mod prefabs of that day, so by
+      count it holds the vanilla ones); a runtime spawn of the vanilla `ShopLocation` reaching a client (R1's first
+      step).
 - [ ] **G3 Why `ShopLocation.OnNetworkSpawn` runs twice per hub load.** Log a stack trace, `IsSpawned` and
       the frame in the prefix. Today a memo hides the symptom. Decides whether slots are re-spawned during
       a session and what "one roll per spawn" really means.
@@ -232,7 +242,11 @@ and settings only; its content before and after was not compared).
 ### R. Rework (decide after G1–G3)
 
 - [ ] **R1 Shop files as host-only data.** Today each new slot is its own network prefab, so every player
-      needs identical shop files or the join fails with no explanation (ForceSamePrefabs). The tools'
+      needs identical shop files or the join fails with no explanation (ForceSamePrefabs). *(2026-11-19: the game
+      now runs with `ForceSamePrefabs` false, so the join does not fail: a player without the file joins and the
+      slot is simply missing for it, NGO logging "Failed to create object locally" (run 10). G2: the vanilla
+      `ShopLocation` is registered on its own, so the slot can be that prefab, its id and price-tag offset sent in a
+      message.)* The tools'
       working copy in `UserData` turns that into a trap: save a draft, forget it, and you cannot join a
       friend. Target: one shared slot prefab (or the vanilla one, G2), with the slot id and the price-tag
       offset sent host → clients in a named message (`CustomMessagingManager`, the `HostBridge` item),
