@@ -76,6 +76,15 @@ the PC's test changes after each session.
       the exchange with a client and the window, because the laptop's battery ran out at 09:23 (6% at run 12,
       then off). Next: the laptop on its charger, POG Mod Check on both, a client without ShopDemo (P4 setup), and
       one with everything: screenshots of the window on both machines and the F10 close.
+      **Added 2026-11-19 (the user's word):** (1) a mod's author can mark it "required for everyone" without any
+      reference to POG Mod Check, with the standard `[assembly: System.Reflection.AssemblyMetadata("POGModCheck",
+      "required")]`; (2) the host names a joining player that sends no list within 15 s (no POG Mod Check there),
+      so a client without the mod is no longer silent on the host's side; the log says why each mod is required;
+      reports stack in the window. Unit tests 31 green, calibrated (the planted attribute removed and two
+      `PeerWatch` rules broken: 4 tests fail on their own lines). On the PC alone (run 14, 13:06): a probe mod
+      carrying the mark is listed "Mark Probe (its author marks it)"; the host read its player list every second
+      for 35 s in the hub with no warning and no NGO error. Not seen: the warning itself, which needs a client
+      without POG Mod Check (the P4 laptop setup), so it joins the LAN check above.
       Also to decide with it: D12 (price tags over empty slots for a client without the mod), and shop files
       without a DLL (they add slots, so they are network content, but there is no melon to list).
 
