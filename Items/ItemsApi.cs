@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using MelonLoader;
 using POGContentLib.Core;
 
@@ -19,8 +22,12 @@ namespace POGContentLib.Items
             return false;
         }
 
-        public void Register(ModItemDefinition definition)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public void Register(ModItemDefinition definition) => RegisterFrom(definition, Assembly.GetCallingAssembly());
+
+        private void RegisterFrom(ModItemDefinition definition, Assembly caller)
         {
+            ContentOwners.Note(definition?.ModId, caller);
             if (Guard()) Plugin.RegisterItem(definition);
         }
 
@@ -29,9 +36,10 @@ namespace POGContentLib.Items
             if (Guard()) Plugin.RegisterUseHandler(handlerId, handler);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Register(ModItemDefinition definition, string handlerId, ModItemUseHandler handler)
         {
-            Register(definition);
+            RegisterFrom(definition, Assembly.GetCallingAssembly());
             RegisterUseHandler(handlerId, handler);
         }
     }
@@ -44,6 +52,12 @@ namespace POGContentLib.Items
         public static ShopsApi Shops { get; } = new ShopsApi();
         /// <summary>Multiplayer content-parity events (ForceSamePrefabs). See ParityApi.</summary>
         public static ParityApi Parity { get; } = new ParityApi();
+        /// <summary>
+        /// The assemblies (simple names, e.g. "ShopDemo") that registered network content through this library, plus
+        /// POGContentLib itself once any did. Every player needs these mods, with the same content: a mod-list check
+        /// (such as POG Mod Check) reads this to tell "required for everyone" from "own only".
+        /// </summary>
+        public static IReadOnlyCollection<string> ContentAssemblies => ContentOwners.Assemblies;
         /// <summary>Runtime inspection of vanilla visuals (lights/pulse/emissive). See DiagnosticsApi.</summary>
         public static DiagnosticsApi Diagnostics { get; } = new DiagnosticsApi();
         // TODO(v2): public static MobsApi Mobs { get; }
