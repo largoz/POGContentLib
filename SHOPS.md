@@ -151,11 +151,14 @@ game alone, then:
 Save writes `UserData/POGContentLib/Shops/<mod>.pogshop.json`; copy it into your package as `pogshop.json`.
 While that working copy exists it **replaces** your mod's packaged shop file(s) (the log says so), so the same
 slot is never loaded twice; delete it to go back to the packaged file.
-A change to a vanilla slot applies the next time the scene loads; a new slot from the next hosted session
-(its network prefab must exist before a session starts). The panel's chances always include every other
+A change to a vanilla slot applies the next time the scene loads, and so does a new slot (it is a copy of the
+game's own shop slot, so nothing has to exist before the session). The panel's chances always include every other
 loaded mod, so you see the real share your weight buys.
 
 ## Multiplayer
 
-The host chooses every slot's item; clients see the result through the game. **New slots** are network
-objects: every player needs the same shop files, as with items (the game requires identical prefab sets).
+The host chooses every slot's item; clients see the result through the game. **New slots** are copies of the
+game's own shop slot, so every player sees them and **only the host needs the shop files**. A player with
+POGContentLib gets the slot's price tag where the file puts it (the host tells it); a player without the library
+sees the tag where the game's slot has it. An item from a mod a player does not have does not appear for that
+player: the slot looks empty there.

@@ -116,9 +116,12 @@ example: `samples/ShopDemo/`.
 
 ## Multiplayer note
 
-Vanilla `NetworkConfig.ForceSamePrefabs` is `TRUE`, so **every player in a lobby must have the
-same content packs** — a vanilla client cannot join a modded host. This is by design, not a bug;
-a parity handshake (advertising installed packs) is planned for v2.
+On the current game build (26668562, checked 2026-11-14 and over LAN on 2026-11-19) the game runs with
+`NetworkConfig.ForceSamePrefabs` **false**: a player without a content pack can join a modded host, and the
+objects of a pack it lacks simply do not appear for it (NGO logs "Failed to create object locally"). New shop
+slots are copies of the game's own slot, so every player sees those. [POG Mod Check](https://github.com/largoz/POGModCheck)
+shows a joining player what differs before anything loads. (Earlier builds ran with `true`; the sections below
+that assume it are history.)
 
 ## Open questions (Milestone 0) — require launching the game
 

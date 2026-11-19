@@ -11,8 +11,9 @@ namespace POGContentLib.Shops
 {
     /// <summary>
     /// Shops domain plugin (docs/design/shops.md). Reads every shop file, folds them into one
-    /// <see cref="ShopCatalog"/>, builds the network prefabs for new slots before a session starts, and
-    /// applies the rules host-side when shop scenes load.
+    /// <see cref="ShopCatalog"/>, builds the host's templates for new slots (copies of the game's own slot prefab,
+    /// nothing new to register), and applies the rules host-side when shop scenes load. Only the host needs the
+    /// shop files: clients learn what a new slot is from the host (<see cref="SlotSync"/>).
     ///
     /// Shop files are found:
     ///   • anywhere under Mods/ named "pogshop.json" or "*.pogshop.json" (how mod packages ship them —
@@ -44,6 +45,7 @@ namespace POGContentLib.Shops
         public void Build(PluginGraph graph)
         {
             Instance = this;
+            SlotSync.Register();
             var cat = MelonPreferences.CreateCategory(PreferencesCategory, "POGContentLib shops");
             _vanillaWeight = cat.CreateEntry("VanillaWeight", ShopCatalogOptions.StandardVanillaWeight, "Vanilla item weight",
                 $"When a mod adds items to a game shop slot, each of the game's own items there gets this weight. " +
@@ -69,7 +71,7 @@ namespace POGContentLib.Shops
             // Items are registered by now (they must be, to join a session): a rule naming a missing or
             // unpriced mod item is reported here, before anyone looks for it in a shop.
             graph.AddSystem(PluginStage.BeforeSessionStart, Name, () => ShopChecks.CheckModItems(Catalog));
-            graph.AddSystem(PluginStage.SessionStop, Name, () => { ShopRuntime.Reset(); ShopEmptySlots.Reset(); });
+            graph.AddSystem(PluginStage.SessionStop, Name, () => { ShopRuntime.Reset(); ShopEmptySlots.Reset(); SlotSync.Reset(); });
         }
 
         private bool _badWeightReported;

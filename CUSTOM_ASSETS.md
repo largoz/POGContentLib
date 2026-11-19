@@ -139,6 +139,7 @@ report what you find.
 
 ## Multiplayer note
 
-Because the game runs with `ForceSamePrefabs = true`, **every player must have the same content
-packs installed** — your bundle included. Mismatches make joins fail; the Lib's parity layer detects
-this and reports what is missing (see `ROADMAP.md`).
+Every player who should see your items needs your content pack, your bundle included. On the current game
+build (26668562) the game runs with `ForceSamePrefabs = false`, so a player without it still joins, but your
+items do not appear for that player. [POG Mod Check](https://github.com/largoz/POGModCheck) shows players what
+differs before they load in.

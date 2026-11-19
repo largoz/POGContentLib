@@ -10,18 +10,18 @@ using UnityEngine;
 namespace POGContentLib.Shops
 {
     /// <summary>
-    /// One network prefab per mod slot, built identically on every peer from the same shop files, so a
-    /// slot the host spawns arrives on clients with its price-tag offset already in place (child
-    /// transforms are not synchronised). Hash = MD5("POGShopSlot", full slot id), like item hashes.
+    /// The host's template per mod slot (R1, 2026-11-19): a copy of the game's own standalone slot prefab
+    /// (<c>ShopLocation</c>, which the game registers as a network prefab on every peer, G2), with its price tag
+    /// posed as the shop file says and the donor's item references cleared. It keeps the donor's network hash, so
+    /// a copy the host spawns arrives on every client as the game's own slot, a client without the shop file or
+    /// without this library included; nothing new is registered. Children are not replicated, so a client with
+    /// the library learns the slot's id and its price-tag pose from the host (<see cref="SlotSync"/>).
     ///
-    /// Built from a vanilla slot (a ShopLocation that belongs to a loaded prefab, e.g. a dungeon merchant)
-    /// during SceneLoaded, i.e. before StartHost/StartClient — the only time ForceSamePrefabs allows
-    /// registration. Templates sit ACTIVE under one INACTIVE holder: they never run themselves, but a copy
-    /// made by Instantiate (ours on the host, NGO's on a client) is a root object and is active at once.
+    /// Templates sit ACTIVE under one INACTIVE holder: they never run themselves, but a copy made by Instantiate
+    /// is a root object and is active at once. They can be built at any time, a running session included.
     /// </summary>
     internal static class SlotTemplates
     {
-        public const string HashNamespace = "POGShopSlot";
         private static GameObject _holder;
         private static readonly Dictionary<string, ShopLocation> _built = new Dictionary<string, ShopLocation>();
 
@@ -36,12 +36,6 @@ namespace POGContentLib.Shops
             if (catalog == null) return;
             var pending = catalog.ModSlots.Values.Where(s => !_built.ContainsKey(s.FullId)).ToList();
             if (pending.Count == 0) return;
-            var nm = NetworkManager.Singleton;
-            if (nm != null && nm.IsListening)
-            {
-                MelonLogger.Warning($"[POGContentLib] [Shops] {pending.Count} slot template(s) not built before the session started; they appear from the next session.");
-                return;
-            }
 
             var donor = FindDonor(null);
             if (donor == null)
@@ -56,7 +50,7 @@ namespace POGContentLib.Shops
                 var t = Build(src, s);
                 if (t != null) _built[s.FullId] = t;
             }
-            MelonLogger.Msg($"[POGContentLib] [Shops] Slot templates ready: {_built.Count} (copied from '{donor.gameObject.name}').");
+            MelonLogger.Msg($"[POGContentLib] [Shops] Slot templates ready: {_built.Count} (copied from the game's '{donor.gameObject.name}', network hash {donor.GetComponent<NetworkObject>().GlobalObjectIdHash}; nothing new to register).");
         }
 
         /// <summary>A ShopLocation from a loaded prefab asset (not a scene instance), preferring a named one.</summary>
@@ -92,11 +86,9 @@ namespace POGContentLib.Shops
             go.name = ShopScene.ModSlotPrefix + s.FullId;
             go.SetActive(true);   // active itself, inactive through the holder
             var slot = go.GetComponent<ShopLocation>();
-            var net = go.GetComponent<NetworkObject>();
             slot.m_networkPrefabRef = null;
             slot.m_lootTableRef = null;
             slot.m_shopKeeper = null;
-            net.GlobalObjectIdHash = ContentRegistry.ComputeHash(HashNamespace, s.FullId);
 
             var tag = s.Def.PriceTag;
             if (tag != null && slot.m_priceTagText != null)
@@ -105,7 +97,6 @@ namespace POGContentLib.Shops
                 if (tag.Pos != null) tagRoot.localPosition = new Vector3(tag.Pos[0], tag.Pos[1], tag.Pos[2]);
                 if (tag.Rot != null) tagRoot.localEulerAngles = new Vector3(tag.Rot[0], tag.Rot[1], tag.Rot[2]);
             }
-            CoreServices.Content.RegisterPrefab(net);
             return slot;
         }
 

@@ -27,6 +27,9 @@ namespace POGContentLib.Shops
             catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
             try { ShopEmptySlots.HideTagIfEmpty(__instance); }
             catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
+            // A client asks the host what a runtime copy of the game's slot prefab is (R1).
+            try { SlotSync.OnClientSlotSpawned(__instance); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] asking the host about a slot: {ex.GetType().Name}: {ex.Message}"); }
         }
     }
 

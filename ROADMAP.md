@@ -211,9 +211,15 @@ the new pipeline (read `CreateShopItems` / `LoadNetworkPrefab` / `HasNetworkPref
       content mods had 645 against the host's 648 in run 10, three fewer = the three mod prefabs of that day, so by
       count it holds the vanilla ones); a runtime spawn of the vanilla `ShopLocation` reaching a client (R1's first
       step).
-- [ ] **G3 Why `ShopLocation.OnNetworkSpawn` runs twice per hub load.** Log a stack trace, `IsSpawned` and
+- [x] **G3 Why `ShopLocation.OnNetworkSpawn` runs twice per hub load.** Log a stack trace, `IsSpawned` and
       the frame in the prefix. Today a memo hides the symptom. Decides whether slots are re-spawned during
       a session and what "one roll per spawn" really means.
+      **2026-11-19: it does not, on the last two builds (host).** The asserting runs' trace (`G3` lines):
+      `checks-5` (2026-11-14, build 26652532) and `checks-6` (2026-11-19, build 26668562) each saw 14
+      `OnNetworkSpawn` calls on 14 distinct slot objects in the hub, at most one per object, each already spawned
+      (`isSpawned=True`). The double call of 2026-11-12 came from an older build and is not reproduced. So "one roll
+      per spawn" is one roll per slot object per hub load; the memo (one choice per slot object per session) stays
+      as a guard. Not checked: a client, a dungeon scene, the hub reloaded after a round.
 - [ ] **G4 A purchase.** A mod item from a vanilla slot and from a new slot: gold taken, the item in the
       inventory and usable, reputation up by round(price × 0.3). Then theft, and the seller's death making
       a new slot's item free.
@@ -241,7 +247,7 @@ and settings only; its content before and after was not compared).
 
 ### R. Rework (decide after G1–G3)
 
-- [ ] **R1 Shop files as host-only data.** Today each new slot is its own network prefab, so every player
+- [x] **R1 Shop files as host-only data.** Today each new slot is its own network prefab, so every player
       needs identical shop files or the join fails with no explanation (ForceSamePrefabs). *(2026-11-19: the game
       now runs with `ForceSamePrefabs` false, so the join does not fail: a player without the file joins and the
       slot is simply missing for it, NGO logging "Failed to create object locally" (run 10). G2: the vanilla
@@ -251,6 +257,22 @@ and settings only; its content before and after was not compared).
       friend. Target: one shared slot prefab (or the vanilla one, G2), with the slot id and the price-tag
       offset sent host → clients in a named message (`CustomMessagingManager`, the `HostBridge` item),
       late joiners included. A client without the file still sees the slot.
+      **Done 2026-11-19 (the user's word: "так, роби R1 і R2").** A new slot is a copy of the game's `ShopLocation`
+      (network hash 1055139892) with the donor's references cleared and its price tag posed; it keeps the game's
+      hash, so nothing is registered (`SlotTemplates`). A client with the library asks the host about each runtime
+      copy of a slot it receives; the host answers with the slot id, the price tag's local pose and whether it is
+      hidden (`SlotSync`, `Model/SlotInfo`, over `HostBridge`, which now registers at session start and writes
+      strings byte by byte). Templates can be built during a session. 7 unit tests for the message (71 in all).
+      Checked: asserting runs `checks-7` and `checks-8` (0 failures; the network list holds 648 prefabs, no
+      `POGShopSlot`, new expectations calibrated on the `checks-6` log, where they fail). LAN `lan-1/run20`: (A) a
+      client with every mod sees the stand, the berry and the price tag as the host does (`host-…-look.png`,
+      `client-A-look.png`); (B) a client with the library and no shop file ("0 new slot(s)") gets the slot from the
+      host, tag posed, berry absent (the item is ShopDemo's) (`client-B-look.png`); (C) a client without the
+      library: the slot is created (NGO fails only on the three mod items, not on the slot, unlike run 10), its tag
+      where the game's slot has it, on top of the stand (`client-C-look.png`). `run21`: with the fixed library on
+      both, one answer per slot; the client found the stand by its id from the host and bought its berry (gold 7 → 0),
+      then the pass through the bucket. Not checked: a slot placed by the dev tools during a session; the tag pose
+      compared by numbers (the posed tag is out of the camera's view; host and client agree in what is visible).
 - [ ] **R2 Dungeon merchants without touching the entrance list.** Today a merchant adds copies of its preset
       to `PropList_EntranceCave_MerchantOrAdventurer`. Every mod then shrinks the dead adventurers' share
       (4 of 10 → 4 of 20 with ten mods), and by the code read the same seed draws a different entrance
@@ -387,6 +409,15 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
       starter shop, nothing above them). The slot is a scene object every peer has; only its item is a mod
       prefab the client cannot create. Nothing in the library can run on such a client; the host could keep mod
       items out of vanilla slots when a peer lacks the mod, once it knows (P7's mod list). Decide with P7.
+- [x] **D15 Every Harmony patch of the library ran twice** (found 2026-11-19 by R1: a client asked the host twice
+      about one slot). `Plugin` patches class by class, and MelonLoader patched the whole assembly too, because the
+      assembly did not say `[assembly: HarmonyDontPatchAll]`: all 26 prefixes, postfixes and the finalizer ran twice
+      (StartHost/StartClient/Shutdown hooks, the shop and item patches, the item's primary action). Fixed with the
+      attribute. `CheckEachPatchOnce` logs at the first scene whether any patch is there more than once; calibrated
+      on the laptop: "26 patch(es) more than once" without the fix, "each patch once" with it (log hash matched the
+      DLL); the asserting run expects "each patch once". What the doubling changed before is not re-measured: the
+      shop choice had its memo, the berry's eating stopped on "already consumed"; a mod item with its own use handler
+      may have fired twice.
 - [ ] **D13 The game's toasts cover POG Mod Check's window** (run 15, laptop: at 13:35 an "Added to … Glow Berry"
       toast in the top right hid the window; at 13:38, the toast gone, the window was there again). The game's
       canvas draws over the IMGUI window. Move the window out of the toasts' corner (top centre, or below them).

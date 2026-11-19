@@ -53,9 +53,17 @@ namespace POGContentLib.Core
             PluginRegistry.Dispatch(PluginStage.GamePrefabsLoaded);
         }
 
+        /// <summary>The session has its NetworkManager set up: the library's messages can be registered.</summary>
+        internal static void OnSessionStarted()
+        {
+            if (!CoreServices.Ready) return;
+            CoreServices.Bridge?.Hook();
+        }
+
         internal static void OnSessionStop()
         {
             if (!CoreServices.Ready) return;
+            CoreServices.Bridge?.Unhook();
             CoreServices.Network.Reset();
             PluginRegistry.Dispatch(PluginStage.SessionStop);
         }
@@ -65,6 +73,7 @@ namespace POGContentLib.Core
     internal static class Patch_StartHost
     {
         static void Prefix() => NetworkLifecycleHooks.OnBeforeSessionStart(SessionRole.Host);
+        static void Postfix() { try { NetworkLifecycleHooks.OnSessionStarted(); } catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] After StartHost: {ex.Message}"); } }
     }
 
     [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.StartServer))]
@@ -77,6 +86,7 @@ namespace POGContentLib.Core
     internal static class Patch_StartClient
     {
         static void Prefix() => NetworkLifecycleHooks.OnBeforeSessionStart(SessionRole.Client);
+        static void Postfix() { try { NetworkLifecycleHooks.OnSessionStarted(); } catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] After StartClient: {ex.Message}"); } }
     }
 
     [HarmonyPatch(typeof(Il2CppGame.Networking.NetworkHandler), nameof(Il2CppGame.Networking.NetworkHandler.EnsureNetworkPrefabsRegistered))]

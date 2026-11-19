@@ -192,7 +192,12 @@ namespace POGContentLib.Shops
             var def = ms.Def;
             if (ShopScene.FindSlot(ms.FullId) != null) return true;   // already spawned this scene visit
             var template = SlotTemplates.Get(ms.FullId);
-            if (template == null) { MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: no template (built after the session started?)"); return false; }
+            if (template == null) { SlotTemplates.BuildPending(Catalog); template = SlotTemplates.Get(ms.FullId); }
+            if (template == null) { MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: no template (the game's slot prefab is not in memory)"); return false; }
+            // The copy keeps the game's slot prefab's network hash: only a hash the game registered reaches clients.
+            uint hash = template.GetComponent<NetworkObject>().GlobalObjectIdHash;
+            var links = NetworkManager.Singleton?.NetworkConfig?.Prefabs?.NetworkPrefabOverrideLinks;
+            if (links != null && !links.ContainsKey(hash)) { MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: the game's slot prefab ({hash}) is not a registered network prefab on this build; not placed"); return false; }
 
             string anchorId = string.IsNullOrEmpty(def.Anchor) ? def.Seller : def.Anchor;
             var anchor = ShopScene.FindAnchor(anchorId);
