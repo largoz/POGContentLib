@@ -9,6 +9,7 @@ namespace POGContentLib.Items
     {
         None,
         GameMesh,     // clone a mesh child from an existing game prefab (reskin, no bundle)
+        ObjFile,      // your own model, built at runtime from an OBJ (no Unity editor needed)
         Png,          // loose PNG icon → Sprite
         BundlePrefab, // prefab/mesh from an AssetBundle
     }
@@ -33,6 +34,20 @@ namespace POGContentLib.Items
         /// <summary>Reskin by cloning a mesh child from an existing game prefab (no AssetBundle).</summary>
         public static ItemVisual GameMesh(string sourcePrefabName, string childName)
             => new ItemVisual { Kind = ItemVisualKind.GameMesh, SourcePrefabName = sourcePrefabName, ChildName = childName };
+
+        /// <summary>
+        /// Your own model from an OBJ file, built into a Unity mesh at runtime — **no AssetBundle and
+        /// no Unity editor**. Materials come from the accompanying .mtl, mapped onto the game's own
+        /// HDRP/Lit (base colour, metallic, smoothness, emission).
+        ///
+        /// This is the cheapest way to ship a genuinely custom shape: any 3D tool exports OBJ, so a
+        /// modder does not need the game's exact Unity version. What it cannot carry is anything the
+        /// Unity editor authors — rigs, animation clips, inspector-configured particle systems, custom
+        /// shaders; those still need <see cref="Bundle"/>. Effects can be added on top through
+        /// capabilities (GlowCapability, ParticleEffect), which is usually enough.
+        /// </summary>
+        public static ItemVisual Obj(string objPath)
+            => new ItemVisual { Kind = ItemVisualKind.ObjFile, Path = objPath };
 
         public static ItemVisual Png(string path) => new ItemVisual { Kind = ItemVisualKind.Png, Path = path };
 

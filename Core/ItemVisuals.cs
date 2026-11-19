@@ -1,3 +1,5 @@
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using System.Collections.Generic;
 using System;
 using Il2Cpp;
 using MelonLoader;
@@ -71,6 +73,214 @@ namespace POGContentLib.Core
 
             MelonLogger.Msg($"[POGContentLib] Reskin: '{childName}' mesh applied to {swapped} renderer(s) on {target.name}.");
         }
+
+
+        /// <summary>
+        /// Same in-place swap as <see cref="ReplaceMeshes(GameObject,GameObject,string)"/>, but with a
+        /// mesh we built ourselves rather than one borrowed from a game prefab — this is what carries a
+        /// fully custom model (see <see cref="ObjMesh"/>). Every renderer of the shell gets the mesh and
+        /// its materials, so the world view and the in-hand view stay in step and the game's own
+        /// show/hide logic keeps working, exactly as in the reskin path.
+        /// </summary>
+        public static void ReplaceMeshes(GameObject target, Mesh mesh, Il2CppReferenceArray<Material> materials)
+        {
+            if (target == null || mesh == null) return;
+
+            int swapped = 0;
+            foreach (var mf in target.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mf == null) continue;
+                if (mf.gameObject.name.Contains("Outline")) continue;   // outline meshes track the shape
+
+                mf.sharedMesh = mesh;
+                var r = mf.GetComponent<MeshRenderer>();
+                if (r != null && materials != null && materials.Length > 0) r.sharedMaterials = materials;
+
+                // Our model is authored Y-up in the item's own space; the shell's mesh child is posed for the shell's
+                // model (the diamond's lies tilted). Keeping that pose laid the Ember Lantern on its side in a shop
+                // slot (2026-11-19, host and client), so the child takes the item root's orientation.
+                var before = Quaternion.Inverse(target.transform.rotation) * mf.transform.rotation;
+                if (Quaternion.Angle(before, Quaternion.identity) > 0.5f)
+                {
+                    mf.transform.rotation = target.transform.rotation;
+                    MelonLogger.Msg($"[POGContentLib] Custom mesh '{mesh.name}': '{mf.gameObject.name}' was turned {before.eulerAngles} " +
+                                    "from the item; set upright to the item.");
+                }
+                swapped++;
+            }
+
+            try { target.GetComponent<InventoryItem>()?.RefreshMeshInfo(); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] RefreshMeshInfo failed: {ex.Message}"); }
+
+            if (swapped == 0)
+                MelonLogger.Warning($"[POGContentLib] Custom mesh '{mesh.name}': no renderer on {target.name} to apply it to.");
+            else
+                MelonLogger.Msg($"[POGContentLib] Custom mesh '{mesh.name}' applied to {swapped} renderer(s) on {target.name}.");
+        }
+
+        /// <summary>
+        /// Give the item a hitbox that matches its model.
+        ///
+        /// Swapping the mesh alone leaves the donor shell's collider behind: a custom lantern ends up
+        /// with a diamond's small box, so it is picked up from the wrong place and bounces off the floor
+        /// wrongly. This is the other half of a custom visual, and it is easy to forget precisely because
+        /// nothing looks broken until you interact with the thing.
+        ///
+        /// Two strategies, in order of fidelity:
+        ///  • The model ships <c>UCX_*</c> hulls → the shell's solid colliders are replaced with convex
+        ///    MeshColliders built from them. Convex is not a preference: a moving Rigidbody can only use
+        ///    convex shapes, which is why a concave object needs several hulls rather than one.
+        ///  • No hulls → each solid primitive collider is refitted to the visual mesh's bounds. Less
+        ///    exact, but it needs nothing from the artist and is never worse than the donor's shape.
+        ///
+        /// Trigger colliders are left strictly alone: they are the game's interaction volumes (pickup
+        /// range and the like), not hitboxes, and resizing them would change how the item is used.
+        /// </summary>
+        public static void ApplyColliders(GameObject target, Mesh[] hulls, Mesh visualMesh)
+        {
+            if (target == null) return;
+
+            var all = target.GetComponentsInChildren<Collider>(true);
+            if (all == null) return;
+
+            var solid = new List<Collider>();
+            int triggers = 0;
+            foreach (var c in all)
+            {
+                if (c == null) continue;
+                if (c.isTrigger) { triggers++; continue; }
+                solid.Add(c);
+            }
+
+            if (hulls != null && hulls.Length > 0)
+                ReplaceWithHulls(target, solid, hulls, triggers);
+            else if (visualMesh != null)
+                RefitToBounds(target, solid, visualMesh, triggers);
+
+            try { target.GetComponent<InventoryItem>()?.RefreshMeshInfo(); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] RefreshMeshInfo failed: {ex.Message}"); }
+        }
+
+        private const string ModCollisionChild = "ModCollision";
+
+        private static void ReplaceWithHulls(GameObject target, List<Collider> solid, Mesh[] hulls, int triggers)
+        {
+            // Layer and physic material come from the shell's own collider (solids live on "Interact" —
+            // measured on the vanilla prefabs — and losing that layer would break pickup raycasts).
+            PhysicsMaterial physic = solid.Count > 0 && solid[0] != null ? solid[0].sharedMaterial : null;
+            int layer = solid.Count > 0 && solid[0] != null ? solid[0].gameObject.layer : target.layer;
+
+            // Host the hulls on an identity-transform child of the SAME transform that carries the
+            // visual mesh. Hull vertices and render vertices come from the same file and the same
+            // space, so parenting both to one transform makes alignment structural — hosting on the
+            // shell's old collider object instead means trusting that its transform happens to match
+            // the mesh child's, which is the donor's business, not ours.
+            Transform anchor = FindVisualAnchor(target);
+
+            var existing = anchor.Find(ModCollisionChild);
+            if (existing != null) UnityEngine.Object.Destroy(existing.gameObject);
+
+            var hostGo = new GameObject(ModCollisionChild);
+            hostGo.transform.SetParent(anchor, false);   // identity local transform
+            hostGo.layer = layer;
+
+            foreach (var c in solid)
+                if (c != null) UnityEngine.Object.Destroy(c);
+
+            int added = 0;
+            foreach (var hull in hulls)
+            {
+                if (hull == null) continue;
+                var mc = hostGo.AddComponent<MeshCollider>();
+                mc.convex = true;              // set before the mesh so PhysX never cooks a concave one
+                mc.sharedMesh = hull;
+                if (physic != null) mc.sharedMaterial = physic;
+                added++;
+            }
+
+            MelonLogger.Msg($"[POGContentLib] Colliders: replaced {solid.Count} shell collider(s) with " +
+                            $"{added} convex hull(s) under '{anchor.name}/{ModCollisionChild}' " +
+                            $"(layer={LayerMask.LayerToName(layer)}, {triggers} trigger(s) left untouched).");
+        }
+
+        /// <summary>
+        /// The transform whose local space the visual mesh is drawn in — the world-variant (PickupItem)
+        /// mesh child when there is one, since that is the variant physics interacts with.
+        /// </summary>
+        private static Transform FindVisualAnchor(GameObject target)
+        {
+            MeshFilter first = null;
+            foreach (var mf in target.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mf == null || mf.sharedMesh == null) continue;
+                if (mf.gameObject.name.Contains("Outline")) continue;
+                if (first == null) first = mf;
+
+                for (var t = mf.transform; t != null && t != target.transform; t = t.parent)
+                    if (t.name == "PickupItem") return mf.transform;
+            }
+            return first != null ? first.transform : target.transform;
+        }
+
+        private static void RefitToBounds(GameObject target, List<Collider> solid, Mesh visualMesh, int triggers)
+        {
+            var bounds = visualMesh.bounds;      // model space, which is the item root's space
+            int refitted = 0;
+
+            foreach (var c in solid)
+            {
+                if (c == null) continue;
+                var t = c.transform;
+                Vector3 centreWorld = target.transform.TransformPoint(bounds.center);
+                Vector3 localCentre = t.InverseTransformPoint(centreWorld);
+                Vector3 sizeScale = Ratio(target.transform.lossyScale, t.lossyScale);
+                Vector3 localSize = Vector3.Scale(bounds.size, sizeScale);
+
+                var box = c.TryCast<BoxCollider>();
+                if (box != null)
+                {
+                    box.center = localCentre;
+                    box.size = localSize;
+                    refitted++;
+                    continue;
+                }
+
+                var sphere = c.TryCast<SphereCollider>();
+                if (sphere != null)
+                {
+                    sphere.center = localCentre;
+                    // Unity sizes a sphere by the largest extent; the inscribed radius would leave
+                    // corners of the model sticking out of its own hitbox.
+                    sphere.radius = Mathf.Max(localSize.x, Mathf.Max(localSize.y, localSize.z)) * 0.5f;
+                    refitted++;
+                    continue;
+                }
+
+                var capsule = c.TryCast<CapsuleCollider>();
+                if (capsule != null)
+                {
+                    capsule.center = localCentre;
+                    capsule.height = localSize.y;
+                    capsule.radius = Mathf.Max(localSize.x, localSize.z) * 0.5f;
+                    capsule.direction = 1;
+                    refitted++;
+                }
+                // A MeshCollider already follows a mesh; leave it to whoever set it.
+            }
+
+            MelonLogger.Msg($"[POGContentLib] Colliders: refitted {refitted}/{solid.Count} shell collider(s) to " +
+                            $"the model bounds {bounds.size} ({triggers} trigger(s) left untouched). " +
+                            "Ship UCX_ hulls in the model for an exact fit.");
+        }
+
+        private static Vector3 Ratio(Vector3 a, Vector3 b) => new Vector3(
+            Mathf.Approximately(b.x, 0f) ? 1f : a.x / b.x,
+            Mathf.Approximately(b.y, 0f) ? 1f : a.y / b.y,
+            Mathf.Approximately(b.z, 0f) ? 1f : a.z / b.z);
+
+        /// <summary>
+        /// Legacy path: parent a cloned mesh child under the item. Kept for visuals that genuinely need
+        /// an extra object (a bundle prefab with its own hierarchy); prefer <see cref="ReplaceMeshes"/>
 
         /// <summary>
         /// Legacy path: parent a cloned mesh child under the item. Kept for visuals that genuinely need

@@ -393,6 +393,15 @@ namespace POGContentLib.Items
         /// <summary>Emissive colour; falls back to <see cref="Colour"/> when unset.</summary>
         public Color? EmissiveColour = null;
 
+        /// <summary>
+        /// Restrict the glow to materials whose name contains this text (case-insensitive). Null or empty means every
+        /// material on the item, which is right for a single-material reskin but wrong for a model with several: a
+        /// lantern wants its shade lit, not its iron frame. An OBJ model's materials carry the names from the source
+        /// file, so the filter is the name the material has in Blender. (Restored 2026-11-19 from the 2026-09 copy of
+        /// the library, where POGCustomItems' Ember Lantern used it.)
+        /// </summary>
+        public string MaterialFilter = null;
+
         /// <summary>Pulse the light via the game's LightFlicker. Requires <see cref="CastsLight"/>.</summary>
         public bool Pulse = false;
         /// <summary>Pulse amplitude (LightFlicker.m_strength).</summary>
@@ -412,7 +421,7 @@ namespace POGContentLib.Items
 
             // The default half: the surface itself glows. HDR emissive means "visible in the dark",
             // not "light source" — nothing around the item gets brighter.
-            ApplyEmissive(go, (EmissiveColour ?? Colour) * Mathf.Max(0f, Intensity));
+            ApplyEmissive(go, (EmissiveColour ?? Colour) * Mathf.Max(0f, Intensity), MaterialFilter);
 
             if (!CastsLight) return;
 
@@ -448,8 +457,10 @@ namespace POGContentLib.Items
         /// Set an emissive colour on the item's mesh renderers (material copies, HDRP first). Covers
         /// every mesh variant — world and in-hand — so the item glows the same however it is carried.
         /// </summary>
-        private static void ApplyEmissive(GameObject root, Color colour)
+        private static void ApplyEmissive(GameObject root, Color colour, string materialFilter)
         {
+            bool filtered = !string.IsNullOrEmpty(materialFilter);
+            int lit = 0;
             foreach (var r in root.GetComponentsInChildren<MeshRenderer>(true))
             {
                 if (r == null || r.gameObject.name.Contains("Outline")) continue;
@@ -457,6 +468,8 @@ namespace POGContentLib.Items
                 for (int i = 0; i < mats.Length; i++)
                 {
                     if (mats[i] == null) continue;
+                    if (filtered && mats[i].name.IndexOf(materialFilter, System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    lit++;
                     var copy = new Material(mats[i]);
                     if (copy.HasProperty(GameNames.Shader.EmissiveColor))
                         copy.SetColor(GameNames.Shader.EmissiveColor, colour);
@@ -470,6 +483,10 @@ namespace POGContentLib.Items
                 }
                 r.materials = mats;
             }
+            // A filter that matches nothing leaves the item looking untouched, with no clue why.
+            if (filtered && lit == 0)
+                MelonLogger.Warning($"[POGContentLib] GlowCapability: no material matched '{materialFilter}' on " +
+                                    $"{root.name}: nothing glows. Check the material name in the model file.");
         }
     }
 

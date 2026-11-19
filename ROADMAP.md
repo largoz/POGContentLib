@@ -79,9 +79,30 @@ the new pipeline (read `CreateShopItems` / `LoadNetworkPrefab` / `HasNetworkPref
 
 ### G. Check first (in this order; each one decides something)
 
-- [ ] **G1 Two players on the library's foundation** (= Milestone 0.3, never run since v0.1). Decides whether
+- [~] **G1 Two players on the library's foundation** (= Milestone 0.3, never run since v0.1). Decides whether
       prefabs registered at runtime reach a client at all. If they do not, the core needs rework before
       shops do, and the rest of this list changes.
+    - **2026-11-19, game build 26668562, LAN (POGLanTest, `_research/lan-test`): they do.** Host = this PC (Steam,
+      Gale), client = the Windows laptop (no Steam, r2modman), UnityTransport, the host started through the game's
+      own save start with the EOS relay bypassed. Both registered `ShopDemo:GlowBerry` under the same hash
+      (473DB177; 647 prefabs each). The client's `CurrentShopItem` matched the host's in all 14 hub slots: the
+      bread slot and the new `berry_stand` slot (a network-spawned slot prefab on the client) hold the glow berry
+      at price 7, the 12 vanilla slots the same items and prices. Seen on both screens (screenshots in
+      `/run/media/tim/Games/pog-runs/lan-1/`). A client joining the running hub (late join) got the same.
+    - **Defect found:** on the client, mod item instances carry `hideFlags = HideAndDontSave` (host: `None`),
+      inherited from the library's template. `FindObjectsOfType` does not return them there, and by Unity's rules a
+      `DontSave` object is not destroyed when a scene unloads (not observed yet). Clear the flags on spawned
+      instances.
+    - Not done yet: a purchase or a theft by the client, eating, passing an item between players, a client
+      without the mods. POGLanTest has a client buy-and-eat step (`[LAN-BUY]`: `Interact` on the bread slot's berry,
+      `ChangeSlot`, the primary action); its one run did not reach the purchase, see the next line.
+    - Run 5 (2026-11-19 04:18): the client joined while the host went from the menu lobby into the hub, NGO threw
+      `Server Scene Handle (-24508) already exist! ... scene load of PitOfGoblin_Lobby` on the client, and the client
+      stayed on "Spawning Character..." (no local player). Run 4 joined at the same point without it. Not the library
+      as far as the logs show; the test tool should join only once the host is in the hub, or retry.
+    - Client-side noise, not the library: without Steam the client logs Steamworks/LootLocker NREs, and a
+      `PushToTalk`/Dissonance NRE every frame. Joining before the main menu is up leaves the client's player
+      half-built (no camera); POGLanTest now waits for the menu.
     - Try two instances on one machine first: one through Steam, one in the offline wine prefix (testing
       notes §3.2). The game has `NetworkHandler.HostServerDebug` / `JoinServerDebug` and `HostDiscovery` /
       `JoinDiscovery` (LAN); they are in the proxies, whether they work is unknown. Memory for two
@@ -173,6 +194,59 @@ closest existing ids. In game = seen in the asserting run on the 2026-11-14 buil
 - [x] The runtime driver asserts (2026-11-14): `checks=1`, `checks/expect.txt` checked by `expect.sh`, `run.sh` exits
       with the number of failures and refuses a log older than the launch (a stale log had passed three checks).
 
+### Defects found 2026-11-19 (LAN test, the decompile, the old library copy)
+
+Open unless marked. "In game" = seen on build 26668562; "from the code" = read, not run.
+- [x] **D1 Client copies of mod items carry `hideFlags = HideAndDontSave`** (in game, on the client; the host's copies
+      have `None`). `ShellFactory` sets the flags on the template itself, not only on its holder (`SlotTemplates` sets
+      them on its holder). On the client `FindObjectsOfType` misses those items, and Unity does not unload `DontSave`
+      objects with their scene (not observed yet). Fix: clear the flags on every spawned instance of a mod prefab
+      (items and slots), and check host and client both report `None`.
+      **Fixed 2026-11-19** (`Core/TemplateCopies`, called from the item and slot spawn hooks). In game, next run: host
+      and client report `None` for both glow berries, the lantern and the `berry_stand` slot, and the client's
+      `FindObjectsOfType` now finds the 2 berries it missed.
+- [x] **D2 OBJ models are lost from this repository.** The 2026-09 copy of the library in
+      `_Modding/ModSource/POGContentLib` has `Core/ObjMesh.cs` (OBJ → mesh at runtime, several materials, `UCX_`
+      collision, handedness), `ItemVisual.Obj`, `ItemVisuals.ReplaceMeshes(target, mesh, materials)` (the mesh goes
+      into the shell's own renderers, so it stays under `PickupItem`/`HeldItem`) and `ItemVisuals.ApplyColliders`.
+      This repository has none of them, and POGCustomItems 2.0.0 (Ember Lantern, `ItemVisual.Obj`) cannot be built
+      against it (from the code). The same copy also has `ColliderProbe`, `CyrillicFallback` and `LocalizationProbe`,
+      not here; decide each. Two copies of one library diverged: keep one.
+      **Restored 2026-11-19:** `ObjMesh`, `ItemVisual.Obj`, the mesh swap with materials, `ApplyColliders`, and
+      `GlowCapability.MaterialFilter` (lost too); `PhysicMaterial` is `PhysicsMaterial` in Unity 6. POGCustomItems builds
+      again (its `.csproj` used paths relative to the old Windows layout; now `GameDir`). In game, host and client: the
+      Ember Lantern (1116 vertices, 3 materials, 4 `UCX_` hulls) and the glow berry load, the mesh goes into the
+      shell's 2 renderers, and both stand in the starter shop on both screens. Still to decide: `ColliderProbe`,
+      `CyrillicFallback`, `LocalizationProbe`, and 158 lines of `DiagnosticsApi` that only the old copy has.
+- [x] **D3 The ShopDemo sample has no model**: its glow berry is the diamond shell tinted green, so on screen it is a
+      green gem (in game, host and client). A sample should show a custom model. **Fixed 2026-11-19:**
+      `samples/ShopDemo/model/GlowBerry.obj` (a berry cluster made by `make_glowberry.py`), shipped next to
+      `pogshop.json`; seen on host and client.
+- [~] **D4 An item without `DisplayName` keeps the shell's tooltip id** (from the code): it is called "Diamond" and
+      counts as discovered with the diamond. Also in v0.2 below. **Fixed in code 2026-11-19** (always our own keys,
+      the content id as the name); an item without a name was not run in game.
+- [ ] **D5 `AttachBundlePrefab` parents the model under the item's root** (from the code): visible in the inventory,
+      wrong layer in the hands, and the shell's renderers come back on `SetVisibility(true)`. Also in v0.2 below.
+- [ ] **D6 Mod items are never in the journal** (from the code: the game builds no item entries). Also in v0.2.
+- [ ] **D7 No big-item shell** (from the code): `Big = true` keeps the diamond's grips and size. Also in v0.2.
+- [ ] **D8 A mod item in a vanilla slot takes the pose that slot gives its own item** (in game, host and client,
+      2026-11-19): the Ember Lantern lies on its side in the torch slot, where the torch, the key ring and the rock lie
+      flat too; the glow berry stands upright in the bread slot. The game places the item by the slot's holder
+      (`ShopLocation.get_SpawnTransform`), so a holder posed for a lying item lays down anything. Not the mesh: the
+      diamond's mesh child was turned only 6.6° off upright (`ItemVisuals.ReplaceMeshes` now sets a custom mesh upright
+      to the item, logged; that alone did not change the picture). Fix: on every peer, after the slot places a mod item
+      (`SetShopItemInternal`), keep the holder's position and yaw and stand the item upright, or take the pose from the
+      shop file's `items` section; then the standing point at the model's bottom centre (Smaller defects).
+      **Tried 2026-11-19, did not work:** a postfix on `ShopLocation.SetShopItemInternal`
+      (`Patch_ShopLocation_SetShopItemInternal`, still in the code) never ran on the host: the decompile has one call
+      site, the client's `ResolveShopItemOnClient`; the host sets its item another way. The host decides the pose
+      (it is synced to clients), so the next try is there: the spawn pose (`ShopLocation.get_SpawnTransform`, used
+      when `SpawnerBase` instantiates the chosen prefab).
+- Not the library, seen the same night: POG Timer 1.0.2 (Thunderstore) logged "Hook failed" four times a second
+  while the menu was up; 1.1.0, which does not, was published 2026-11-19. POGLanTest (the test tool) had four
+  defects, fixed during the test: hosting from the main menu never loaded a scene, a client that joined before the
+  main menu came up had no camera, and the first launch's intro and OK screen waited for input.
+
 ### Order
 
 1. Silent failures and the single pick: small, safe, independent of everything else.
@@ -252,6 +326,19 @@ Framework skeleton compiles clean; correctness of the runtime paths pending Mile
       Unity — logic belongs in capabilities/use handlers. Materials that lost their shader are repaired
       onto `HDRP/Lit` (same-named properties survive the swap). Modder guide: `CUSTOM_ASSETS.md`.
       Gated on the Milestone 0.2 round-trip test.
+- [ ] **What a vanilla item needs, read from the decompile** (`docs/design/item-chain.md`, build 26668562,
+      2026-11-19, nothing of it checked in game). The shell covers every hard requirement; the gaps:
+    - [ ] Always give the item its own `m_itemTooltipID` (name term = discovery id), also without `DisplayName`.
+          Today such an item keeps the shell's key: it is called "Diamond" and counts as discovered with it.
+    - [ ] `AttachBundlePrefab` parents the model under the root; the game shows, hides and layers only
+          `PickupItem` / `HeldItem` and re-enables every renderer of `m_renderers`. Put the model under
+          `PickupItem` (copy under `HeldItem`) and take the shell's renderers out of `m_renderers`.
+    - [ ] Journal entries for mod items (`JournalEntryDataItem` + the UI entry before
+          `UI_JournalGroupItems.Initialize`); the game never creates item entries in code.
+    - [ ] A big-item shell: `Big = true` on the diamond shell keeps the diamond's grips and size.
+    - [ ] Expose `m_itemRarity`, `m_breakVelocity` (with a break effect), `m_triggerDiscoveryOnPickup`.
+    - [ ] Check a definition when it is registered (capability duration > 0, curve set, a grip present) and
+          say what is wrong, instead of an NRE in game.
 - [ ] Loose-file tier polish: PNG icons, OGG audio, OBJ meshes (no Unity Editor needed).
 - [ ] `HostBridge` client→host use requests via `CustomMessagingManager` named messages
       (so non-host players can trigger item effects).
@@ -340,6 +427,13 @@ need no NGO scene-hash patching.
       step; restrict bundles to vanilla-component prefabs under IL2CPP.
 - [ ] POGConfig integration: in-game "installed content packs" panel + parity-mismatch UX (soft dep).
 - [ ] Thunderstore release: framework package + content packs as pinned dependents.
+
+### For content mods planned on top of the library
+
+- [ ] **POGDeeperDepths** (working name; a separate mod, its plan is in its own folder,
+      `_Modding/ModSource/POGDeeperDepths/ROADMAP.md`): depths past the vanilla ones, opened by cog tiers. It
+      needs from the library the Levels module and items; extending the depth station is the mod's own work
+      unless other mods need it too.
 
 ---
 

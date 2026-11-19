@@ -22,8 +22,57 @@ namespace POGContentLib.Shops
 
         static void Postfix(ShopLocation __instance)
         {
+            // A mod slot spawned from our template: an ordinary scene object from here on (see TemplateCopies).
+            try { if (__instance != null && __instance.gameObject.name.StartsWith(ShopScene.ModSlotPrefix)) POGContentLib.Core.TemplateCopies.Release(__instance.gameObject); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
             try { ShopEmptySlots.HideTagIfEmpty(__instance); }
             catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
+        }
+    }
+
+    /// <summary>
+    /// A slot hands every peer its item through <c>SetShopItemInternal</c> (the host from its own RPC, a client from
+    /// <c>ResolveShopItemOnClient</c>; build 26668562). The item was placed earlier, by the slot's holder pose, which is
+    /// made for the slot's vanilla item: the torch slot lays its torch flat, and laid the Ember Lantern on its side too
+    /// (2026-11-19, host and client). A mod item is stood upright here, on every peer, keeping its position and its
+    /// heading.
+    /// </summary>
+    [HarmonyPatch(typeof(ShopLocation), nameof(ShopLocation.SetShopItemInternal))]
+    internal static class Patch_ShopLocation_SetShopItemInternal
+    {
+        static void Postfix(ShopLocation __instance, Il2Cpp.InventoryItem __0)
+        {
+            try { ShopItemPose.StandUpright(__instance, __0); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] standing an item upright: {ex.GetType().Name}: {ex.Message}"); }
+        }
+    }
+
+    internal static class ShopItemPose
+    {
+        /// <summary>Tilt below this many degrees is left as the slot made it.</summary>
+        public const float TiltToleranceDegrees = 5f;
+        private static readonly HashSet<string> _logged = new HashSet<string>(StringComparer.Ordinal);
+
+        public static void StandUpright(ShopLocation slot, Il2Cpp.InventoryItem item)
+        {
+            if (slot == null || item == null) return;
+            var items = POGContentLib.Items.ItemsPlugin.Instance;
+            if (items == null || !items.IsModItem(item)) return;
+
+            var t = item.transform;
+            float tilt = UnityEngine.Vector3.Angle(t.up, UnityEngine.Vector3.up);
+            if (tilt <= TiltToleranceDegrees) return;
+
+            // Heading: where the item's front pointed, flattened; a front that pointed straight up or down gives no
+            // heading, so the direction its top pointed is used instead.
+            var heading = UnityEngine.Vector3.ProjectOnPlane(t.forward, UnityEngine.Vector3.up);
+            if (heading.sqrMagnitude < 1e-4f) heading = UnityEngine.Vector3.ProjectOnPlane(t.up, UnityEngine.Vector3.up);
+            if (heading.sqrMagnitude < 1e-4f) heading = UnityEngine.Vector3.forward;
+            t.rotation = UnityEngine.Quaternion.LookRotation(heading.normalized, UnityEngine.Vector3.up);
+
+            string key = slot.gameObject.name + "|" + item.m_itemID;
+            if (_logged.Add(key))
+                MelonLogger.Msg($"[POGContentLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': stood upright (the slot tilted it {tilt:0}°).");
         }
     }
 

@@ -20,5 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="pogshop.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="model/GlowBerry.obj;model/GlowBerry.mtl" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

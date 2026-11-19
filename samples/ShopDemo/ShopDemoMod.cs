@@ -1,4 +1,7 @@
+using System.IO;
+using System.Linq;
 using MelonLoader;
+using MelonLoader.Utils;
 using POGContentLib.Items;
 using UnityEngine;
 
@@ -11,7 +14,8 @@ namespace ShopDemo
     /// <summary>
     /// Sample content pack for the Shops module. Phase 1 (code) registers the item; phase 2 (data) is
     /// pogshop.json next to this mod, which says where it is sold. Nothing here is shop-specific except
-    /// ShopCost, the base price the shop shows.
+    /// ShopCost, the base price the shop shows. The berry has its own model, GlowBerry.obj (+ .mtl), shipped
+    /// next to pogshop.json and made by model/make_glowberry.py.
     /// </summary>
     public class ShopDemoMod : MelonMod
     {
@@ -25,12 +29,22 @@ namespace ShopDemo
                 DisplayDescription = "A berry that glows faintly. Tastes like an apple, somehow.",
                 ItemType = Il2Cpp.ItemType.Food,
                 MapIcon = Il2Cpp.MapIconType.Food,
-                Tint = new Color(0.4f, 1f, 0.5f),
+                Visual = ModelPath() is string obj ? ItemVisual.Obj(obj) : null,   // null: the diamond shell
                 GoldValue = 20,
                 ShopCost = 7,
                 Capabilities = { new EatCapability { CopyFrom = "Item_Apple", HealthOnEating = 15f, BodyValue = 1 } },
             });
             LoggerInstance.Msg("ShopDemo: Glow Berry registered (shop rules in pogshop.json).");
+        }
+
+        // The model ships next to pogshop.json: Mods/<Author>-ShopDemo/ under Gale, nested deeper under r2modman.
+        private string ModelPath()
+        {
+            string found = null;
+            try { found = Directory.EnumerateFiles(MelonEnvironment.ModsDirectory, "GlowBerry.obj", SearchOption.AllDirectories).FirstOrDefault(); }
+            catch (System.Exception e) { LoggerInstance.Warning("ShopDemo: looking for GlowBerry.obj failed: " + e.Message); }
+            if (found == null) LoggerInstance.Warning("ShopDemo: GlowBerry.obj not found under Mods/: the berry keeps the diamond shell's look.");
+            return found;
         }
     }
 }

@@ -1,0 +1,18 @@
+# GlowBerry materials
+newmtl Berry_Glow
+Kd 0.30 0.95 0.45
+Ke 0.10 0.55 0.22
+Ns 300
+d 1.0
+
+newmtl Stem
+Kd 0.32 0.20 0.10
+Ke 0 0 0
+Ns 50
+d 1.0
+
+newmtl Leaf
+Kd 0.20 0.55 0.18
+Ke 0 0 0
+Ns 80
+d 1.0

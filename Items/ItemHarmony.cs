@@ -18,6 +18,9 @@ namespace POGContentLib.Items
             var plugin = ItemsPlugin.Instance;
             if (plugin == null || !plugin.IsModItem(__instance)) return;
 
+            // A copy of our template, spawned: an ordinary scene object from here on (see TemplateCopies).
+            TemplateCopies.Release(__instance.gameObject);
+
             // Ensure the state component exists on the spawned instance (managed state does not
             // survive Instantiate — the handle lazily resolves itself by hash).
             if (__instance.GetComponent<ModItemHandle>() == null)

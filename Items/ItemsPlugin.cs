@@ -169,16 +169,14 @@ namespace POGContentLib.Items
                 ? def.TooltipDescriptionKey
                 : $"MOD/{def.ModId}/{def.ContentId}_Desc";
 
-            if (!string.IsNullOrEmpty(def.DisplayName))
-            {
-                ModLocalization.Register(nameKey, def.DisplayName);
-                item.m_itemTooltipID = nameKey;
-            }
-            if (!string.IsNullOrEmpty(def.DisplayDescription))
-            {
-                ModLocalization.Register(descKey, def.DisplayDescription);
-                item.m_itemTooltipDescriptionID = descKey;
-            }
+            // Always our own keys, with or without the texts: the game uses m_itemTooltipID as the item's discovery id
+            // too (InventoryItem.IsDiscovered, build 26668562), so a kept shell key made the item "Diamond" and
+            // discovered together with the diamond. No DisplayName: the content id is the name; no description:
+            // the game's own placeholder.
+            ModLocalization.Register(nameKey, string.IsNullOrEmpty(def.DisplayName) ? def.ContentId : def.DisplayName);
+            item.m_itemTooltipID = nameKey;
+            if (!string.IsNullOrEmpty(def.DisplayDescription)) ModLocalization.Register(descKey, def.DisplayDescription);
+            item.m_itemTooltipDescriptionID = descKey;
         }
 
         /// <summary>
@@ -297,6 +295,20 @@ namespace POGContentLib.Items
                                 }
                             }
                             else MelonLogger.Warning($"[POGContentLib.Items] Visual source not found: {def.Visual.SourcePrefabName}");
+                            break;
+
+                        case ItemVisualKind.ObjFile:
+                            // A model of our own, built from plain geometry data at runtime. Same in-place swap as the
+                            // reskin path: the mesh goes into the shell's own renderers, which sit under PickupItem /
+                            // HeldItem, so the game keeps showing, hiding and layering it (docs/design/item-chain.md).
+                            var model = ObjMesh.Load(def.Visual.Path);
+                            if (model != null)
+                            {
+                                ItemVisuals.ReplaceMeshes(go, model.Mesh, model.Materials);
+                                // The hitbox follows the model; otherwise the item keeps the shell's collider.
+                                ItemVisuals.ApplyColliders(go, model.CollisionMeshes, model.Mesh);
+                            }
+                            else MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: OBJ visual failed, keeping the shell mesh.");
                             break;
 
                         case ItemVisualKind.Png when def.Icon == null:
