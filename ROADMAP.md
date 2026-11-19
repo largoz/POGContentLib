@@ -10,6 +10,130 @@ the content-framework research notes
 
 ---
 
+## Plan to the first release and after (written 2026-11-19)
+
+This section is the order of work. Everything below it is the record: what was found, tried and shown, with the
+runs. Where an older section disagrees with this one (the game's `ForceSamePrefabs`, the parity layer, Milestone 0),
+this section and the dated records win. The working rules (proof from the game on two machines, backups before a
+launch, who may commit, push or publish) are in `_Modding/ModSource/_research/TESTING.md` and at the top of
+"Current plan" below.
+
+**Where it stands.** Shown over LAN (PC host, laptop client), game build 26668562: a mod item in vanilla slots and
+in a new slot, bought, eaten, passed between players, put in the bucket; a client without the mods breaks nothing;
+a new slot reaches every player and only the host needs shop files (R1); POG Mod Check (a separate, published mod)
+asks before joining. Not shown anywhere: a client joining through the game's own lobby, a round in the dungeon with
+a client, saves, theft, the shop tools under a human's hands, a bundle model. Nothing of the library is on
+Thunderstore.
+
+**The rule for scope.** A feature ships in the first release only with a proof from the game on both machines;
+otherwise it is left out of the release or cut. What cannot be changed after release is done before it: file
+formats, ids, what a weight means, package names and boundaries. Where a choice is open, the stricter or smaller
+option goes first if it can be loosened later without breaking published mods.
+
+### Phase 0. Decisions (no code)
+
+- [ ] 0.1 Review LethalLib (the task in "Design review" below) and write the findings there.
+- [ ] 0.2 Put the three design questions to the user again, with the findings, and write the answers there. If the
+      user still has no preference, propose the strict options and get a yes; do not decide for the user.
+- [ ] 0.3 A fourth question, new: **may a mod add to vanilla slots in the first release at all?** Recommended: no.
+      The first release then has items and a mod's own slots at a seller, nothing vanilla is displaced, and what a
+      weight means against vanilla content (1.1) does not have to be frozen yet; `add` into vanilla slots comes in
+      a later version with the vanilla floor. Adding it later breaks nobody.
+- [ ] 0.4 Names that cannot change later: the Thunderstore package name or names, the author shown in `MelonInfo`
+      (today "POG Community"), the version the first release carries.
+
+Done when: the answers and the names are written in this file.
+
+### Phase 1. What freezes at release
+
+- [ ] 1.1 What a weight means against vanilla content: the vanilla floor in place of `VanillaWeight`, in the model
+      with unit tests, then one run. Only if 0.3 keeps `add` in the first release; otherwise after it.
+- [ ] 1.2 The shop file, format 1, final: what a mod may write (`slots`, and `add` / `patch` / `requires` per the
+      decisions), private slots, an exact error for what is not allowed.
+- [ ] 1.3 R5: slot and seller ids that survive a game update (seller flag + index, the path as a fallback).
+- [ ] 1.4 R4: a new slot at a seller as the main path. A slot needs coordinates, and today they come from the
+      in-game tools: either the library places a slot by itself next to the seller's own, or the tools ship (1.5).
+      Try the first; decide then.
+- [ ] 1.5 R3: the shop tools out of the library, into a mod of their own on the public API. A human has never used
+      them: the user tries them once before they are documented.
+- [ ] 1.6 The package boundary (question 3): Shops as a mod of its own, the core without balance decisions. It
+      needs the same public API as 1.5.
+- [ ] 1.7 The C# surface: what a pack calls (`Content.Items.Register`, `ModItemDefinition`, the capabilities) is
+      listed in the README, everything else is `internal`. `Content.ContentAssemblies` is a contract already: the
+      published POG Mod Check reads it by reflection.
+- [ ] 1.8 Remove what is dead: the Steam-lobby parity layer (no callback fires on this game; POG Mod Check does that
+      job), its three patches and its entries in the compatibility probe.
+
+Done when: unit tests hold each rule, the asserting run is green, and `SHOPS.md` describes only what is left.
+
+### Phase 2. The gate: prove what ships
+
+Each line is a run on both machines with screenshots and both logs, written into the records below.
+
+- [ ] 2.1 Use on a client. An item with a use handler of its own is host-only today (the client's click is put
+      off). Send the request through `HostBridge` (it works since R1), or say so in the README.
+- [ ] 2.2 Saves. A save with mod items loaded with the mod and without it; no run of the save guard is recorded.
+      The player's saves are backed up first and the test uses a slot of its own.
+- [ ] 2.3 A round in the dungeon with a client: a mod item carried down, used, carried up in the bucket, the round
+      ended; a late join in the dungeon.
+- [ ] 2.4 G4, the rest: theft, and the seller's death making a new slot's item free.
+- [ ] 2.5 G5: a seller that is absent on a visit (hubs draw some sellers at random): the slot is not placed, and
+      the log says why.
+- [ ] 2.6 G6: a real pack. POGCustomStones rebuilt on the library, its use handlers included.
+- [ ] 2.7 Loot. A mod item put into a loot table and found by a client; no such run is recorded. Or the injector
+      stays out of the first release.
+- [ ] 2.8 Dungeon merchants: with a client and after R2, or out of the first release.
+- [ ] 2.9 A client joining through the game's own lobby (two Steam accounts): every run so far went around it.
+      Needs the user and a second player.
+- [ ] 2.10 Open defects: D12 (price tags over empty slots for a player without the mod) and "Smaller defects".
+      Each is fixed or written into the README as a known limit.
+- [ ] 2.11 A game update shows as one clear log line: every game member a patch uses is in the compatibility probe
+      (on 2026-11-14 one was missing), and a test holds that.
+
+Done when: every feature the README promises has its run.
+
+### Phase 3. The first release
+
+- [ ] 3.1 The modder's first page in the README: an item in a dozen lines, a shop slot, how to see it work; written
+      the way POG Mod Check's "For mod developers" is. The sample (`samples/ShopDemo`) builds from a clean clone.
+- [ ] 3.2 The promise, in the README: what will not change (ids, the shop file format 1, the listed API) and what
+      may (everything else).
+- [ ] 3.3 The package: `manifest.json`, the icon (the user's), `CHANGELOG.md` with the date in its header, the
+      MelonLoader dependency. The stale parts of this file, of the README and `RUNTIME_TESTS.md` rewritten or
+      removed.
+- [ ] 3.4 Publish on the user's word: the library, the Shops mod, then one pack built on them (POGCustomItems or
+      the stones), so the store shows something that works. Check the store pages through the API afterwards.
+
+Done when: a clean profile holding only Thunderstore packages shows a mod item in a shop to a host and a client.
+
+### After the first release
+
+In this order unless the user says otherwise. Each starts with its smallest experiment, and its data contract is
+written after the experiment, not before.
+
+- **Vanilla slots**, if 0.3 left them out: the vanilla floor, `add`, a POG Config page for the host.
+- **Bundle models.** Needs the game's Unity editor (6000.3.24f1) installed, with the user's Unity account. First
+  the round trip (a cube from a bundle shown in the game), then D5. Mob models and animation wait for this.
+- **R2, dungeon merchants** without changing the vanilla list, if they were left out.
+- **Mobs** (the facts: `_Modding/ModSource/_research/MOBS_NATIVE.md`). Three levels: a retuned copy of a game mob
+  (numbers only), a rewired one (the game's states, the mod's own transitions), a new behaviour (the mod's own
+  states). Experiments, each decides the next: (1) a copy of a simple mob with other numbers, spawned on the host;
+  (2) a client sees it and fights it; (3) into a level's spawn table inside the danger budget, with the host's
+  floor for vanilla mobs; (4) a transition with a managed condition; (5) a state class of the mod's own.
+- **Levels.** The first consumer is the user's own labyrinth. Read how the game builds a level before any API.
+- **Only when someone asks:** a multiplier per content mod, `"open"` slots, `patch` for mods, codeless packs.
+
+### Beside the library (other repositories)
+
+- [ ] POGConfig, POGCustomStones, POGSpawner probably patch twice the way D15 did: each calls `PatchAll` itself
+      and does not say `HarmonyDontPatchAll`. Check each the way D15 was checked (count the patches per method in
+      the game), fix, and release POGConfig on Thunderstore. POGSpawner also fails on `Bucket.Depth`.
+- [ ] POG Mod Check: D13 (toasts over the window), D14 (F10 is also POGSpawner's key), a join through the game's
+      lobby, a gamepad. "Shop files without a DLL" stopped being a difference between players with R1.
+- [ ] Repositories for POGBrightMod and POGGraphics; the laptop's test state cleaned at the end.
+
+---
+
 ## Current plan (2026-11-19): the library working in co-op, and a mod-mismatch window
 
 Every item is done only with proof from the game on both machines (PC host, laptop client, POGLanTest, laptop sound
@@ -427,7 +551,7 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
       it (gold 14 → 7): in hands, `m_isBigItem` true, `BucketUpgrade` 0, grips LeftHand/RightHand/Generic/
       Backpack/Table/ItemRack; dropped again. The vanilla big items, for reference: `BigItem_Decoration_01` and
       `BigItem_TreasureDisplay` carry `BucketUpgrade`, `BigItem_Scrap_Cog` is the game's 'BigCog'.
-- [ ] **D8 A mod item in a vanilla slot takes the pose that slot gives its own item** (in game, host and client,
+- [x] **D8 A mod item in a vanilla slot takes the pose that slot gives its own item** (in game, host and client,
       2026-11-19): the Ember Lantern lies on its side in the torch slot, where the torch, the key ring and the rock lie
       flat too; the glow berry stands upright in the bread slot. The game places the item by the slot's holder
       (`ShopLocation.get_SpawnTransform`), so a holder posed for a lying item lays down anything. Not the mesh: the
@@ -487,6 +611,8 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
   main menu came up had no camera, and the first launch's intro and OK screen waited for input.
 
 ### Order
+
+*(Superseded 2026-11-19 by "Plan to the first release and after" at the top of this file.)*
 
 1. Silent failures and the single pick: small, safe, independent of everything else. *(done)*
 2. G1 and G2, then decide R1 and R2. *(2026-11-19: G1 shown over LAN, G2 and G3 done, R1 done; R2 has the user's
