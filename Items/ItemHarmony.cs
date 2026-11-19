@@ -49,4 +49,32 @@ namespace POGContentLib.Items
             plugin.TryUseItem(__instance, __instance.Entity);
         }
     }
+
+    /// <summary>
+    /// D9 (2026-11-19, LAN): a shop slot that sells copies (<c>SpawnCopyInsteadOfPickup</c>, e.g. the starter
+    /// shop's bread slot) hands the buyer a new item through <c>InventoryItem.SpawnCopyAndPickup</c>, which looks the
+    /// prefab up with <c>NetworkHandler.GetNetworkPrefab(hash)</c>. That walks only the game's own prefab list, so
+    /// for a mod item it returned null: NGO logged "The NetworkObject prefab parameter was null!", BuyItem threw,
+    /// and the buyer paid (gold 14 -> 7) and got nothing. A mod hash the game's list does not know is answered
+    /// with the mod's template, which is registered with NGO under that hash (NetworkRegistrar).
+    /// </summary>
+    [HarmonyPatch(typeof(Il2CppGame.Networking.NetworkHandler), nameof(Il2CppGame.Networking.NetworkHandler.GetNetworkPrefab))]
+    internal static class Patch_NetworkHandler_GetNetworkPrefab
+    {
+        private static readonly System.Collections.Generic.HashSet<uint> _logged = new System.Collections.Generic.HashSet<uint>();
+
+        static void Postfix(uint prefabIdHash, ref Unity.Netcode.NetworkObject __result)
+        {
+            try
+            {
+                if (__result != null) return;
+                var prefab = CoreServices.Content?.GetPrefabByHash(prefabIdHash);
+                if (prefab == null) return;
+                __result = prefab;
+                if (_logged.Add(prefabIdHash))
+                    MelonLoader.MelonLogger.Msg($"[POGContentLib] The game asked for network prefab {prefabIdHash:X8} (a copy of a mod item); answered with {prefab.name}.");
+            }
+            catch (System.Exception ex) { MelonLoader.MelonLogger.Warning($"[POGContentLib] GetNetworkPrefab({prefabIdHash:X8}): {ex.GetType().Name}: {ex.Message}"); }
+        }
+    }
 }

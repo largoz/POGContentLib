@@ -122,6 +122,10 @@ namespace POGContentLib.Items
         public Sprite Icon { get; set; }
         /// <summary>Name of an existing game Sprite to use as the icon (resolved at build).</summary>
         public string IconSpriteName { get; set; }
+        /// <summary>Path to a PNG icon of the mod's own (square, transparent background; the sample's is 256x256),
+        /// used when neither <see cref="Icon"/> nor <see cref="IconSpriteName"/> is set. An item with a model of its own
+        /// (<c>ItemVisual.Obj</c>) and no icon shows the shell's icon.</summary>
+        public string IconFile { get; set; }
         /// <summary>Optional jewel/mesh tint (HDRP _BaseColor).</summary>
         public Color? Tint { get; set; }
 

@@ -10,6 +10,52 @@ the content-framework research notes
 
 ---
 
+## Current plan (2026-11-19): the library working in co-op, and a mod-mismatch window
+
+Every item is done only with proof from the game on both machines (PC host, laptop client, POGLanTest, laptop sound
+off): screenshots of host and client, unit tests green, each defect found goes into this ROADMAP. No publishing or
+pushing without the user's command; commits by Largo (noreply), no co-authors; back up saves before launches; undo
+the PC's test changes after each session.
+
+- [x] **P1 D8:** a mod item in a vanilla slot stands upright. **Done 2026-11-19 (run 7, 08:46):** host log
+      "EmberLantern in '…Item_Torch_Unlit': stood upright (the slot tilted it 52°)", both berries "upright already
+      (tilt 0°)"; the lantern stands on the counter in the host's and the client's screenshot
+      (`pog-runs/lan-1/run7/host-look.png`, `client-after-pass.png`).
+- [x] **P2 Buy and eat:** the client buys the glow berry (gold taken, berry in its inventory with its icon) and eats
+      it (berry gone, effect in the log). POGLanTest: a client stuck on "Spawning Character..." rejoins.
+      **Done 2026-11-19, run 9 (09:02), client log and screenshots:** gold 14 → 7; a new berry in its inventory
+      slot 0, in hand, owner = the client (the bread slot sells copies, D9); its icon is the berry's own (256x256,
+      D10); the "New Discovery" and "Item Purchased" toasts show the berry icon
+      (`pog-runs/lan-1/run9/lap-shots/client-090304-04-bought.png`); primary action → health 100 → 110, the berry
+      destroyed. Rejoin: with `SimulateStuckOnce` the client counted itself stuck 45 s after the hub, left through
+      the game's own path (`NetworkHandler.Disconnect`, `NetworkMenu.OnDisconnected` → main menu), joined again
+      6 s later, got its player and did the whole test after that. (Run 8: leaving with `NetworkManager.Shutdown`
+      alone kept the client in the hub scene, and every rejoin came back without a player: a POGLanTest defect,
+      fixed.) A real "Spawning Character..." hang was not reproduced on demand (seen once, run 5).
+- [x] **P3 Pass and bucket:** an item dropped by one player and picked up by the other, and put in the bucket, both ways.
+      **Done 2026-11-19 (run 7, 08:48), both logs agree:** the client bought the `berry_stand` berry (gold 7 → 0) and
+      dropped it; the host picked it up (owner 0) and put it in the bucket; the client saw it in the bucket (listed
+      in `ItemsInBucket`), took it out (owner 1) and put it back; 30 s later the host and the client both see it in
+      the bucket, listed, owner 1. The host → client hand-over was through the bucket, not the floor.
+- [x] **P4 Client without the content mods** (POGLanTest only): what it sees; neither it nor the host breaks.
+      **Done 2026-11-19, run 10 (09:06), both logs and screenshots:** the client (POGLanTest and POG Graphics only,
+      645 network prefabs against the host's 648) was let in, NGO refused nothing, and both stayed connected for the
+      whole run (three reports each, `clientsConnected=2`). The client's NGO logged "Failed to create object
+      locally" four times, for the mod objects: `641707B8` (the `berry_stand` slot), `473DB177` twice (the glow
+      berries) and `F65A65F8` (the Ember Lantern); it sees the bread and torch slots empty under their price tags
+      "7" and "140" (D12) and no berry stand (`run10/lap-shots/client-090645-01-look.png`). The host logged no
+      exception (`Player.log`), its items stayed in place; the client's 6 exceptions are its missing Steam
+      (`SteamClient.get_Name`, achievements), as in every client run. Nothing tells either player what is missing:
+      that is P7.
+- [ ] **P5 D5–D7:** bundle model under `PickupItem`/`HeldItem`, journal entries, big-item shell: fix, or record why not.
+- [ ] **P6 One library:** each file only in the old `_Modding/ModSource/POGContentLib` copy ported or rejected (reason
+      written down), then the old copy archived.
+- [ ] **P7 Mod-mismatch window** (a separate mod, own repo `largoz/<name>`): after connecting, host and client exchange
+      their mod lists (id, version, DLL hash) by an NGO named message, not the Steam lobby; each mod is "required for
+      everyone" (network content through POGContentLib, or listed in a config) or "own only" (the default); a window in
+      game lists missing required mods, different versions and extra ones, does not block play, closes with a button,
+      and is copied to the log.
+
 ## Pre-release gate — checks and rework before anything is published (review of 2026-11-14)
 
 Nothing of the Shops module is pushed or published. Until the first release the file format and the ids
@@ -242,6 +288,30 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
       site, the client's `ResolveShopItemOnClient`; the host sets its item another way. The host decides the pose
       (it is synced to clients), so the next try is there: the spawn pose (`ShopLocation.get_SpawnTransform`, used
       when `SpawnerBase` instantiates the chosen prefab).
+      **Tried again, did not run:** a postfix on `SpawnerBase.InstantiateNetworkPrefab` logged nothing (run 6;
+      `CreateShopItems` reaches it through the vtable). **Fixed 2026-11-19:** the pose is `get_SpawnTransform` =
+      holder × inverse(item's `m_standingTransform`), and `CreateShopItems` then calls
+      `ClientNetworkParenting.SetParentBeforeSpawn(slot)`, which records the pose relative to the slot that every
+      client applies. A prefix there stands a mod item upright about its standing point. In game, run 7: P1 above.
+- [x] **D9 Buying a mod item from a slot that sells copies takes the gold and gives nothing** (in game, run 6:
+      gold 14 → 7, the berry stayed in the slot). Such a slot (`ItemSpawner.m_setSpawnCopyOnSpawn`, e.g. the starter
+      shop's bread slot) hands the buyer a new item via `InventoryItem.SpawnCopyAndPickup`, which asks
+      `NetworkHandler.GetNetworkPrefab(hash)`; that walks only the game's own prefab list, so NGO logged "The
+      NetworkObject prefab parameter was null!" and `BuyItem` threw after `PurchaseLocal` (host `Player.log`).
+      **Fixed 2026-11-19:** a postfix answers a mod hash the game's list does not know with the mod's template
+      (`Patch_NetworkHandler_GetNetworkPrefab`). In game, run 7: the copy reached the client's inventory (P2).
+- [x] **D10 An item with an OBJ model has the shell's icon** (in game, run 7: the client's "Added to …" toast shows
+      the diamond). `ItemVisual.Obj` makes no icon and the sample sets none; only `Icon`, `IconSpriteName` or a PNG
+      visual change it. **Fixed 2026-11-19:** `ModItemDefinition.IconFile` (a PNG of the mod's own; logged when
+      loaded; a model without any icon logs a warning), and the sample ships `GlowBerry.png`, rendered from its
+      model by `samples/ShopDemo/model/make_icon.py` (Blender, headless). In game, run 9: host and client load it
+      (256x256); the client's purchase toasts and the host's "Added to Bucket" toast show the berry.
+- [ ] **D12 A client without the mod sees price tags over empty slots** (in game, run 10: "7" and "140" in the
+      starter shop, nothing above them). The slot is a scene object every peer has; only its item is a mod
+      prefab the client cannot create. Nothing in the library can run on such a client; the host could keep mod
+      items out of vanilla slots when a peer lacks the mod, once it knows (P7's mod list). Decide with P7.
+- POGLanTest (the test tool), run 6–7: `ScreenCapture.CaptureScreenshot` fails under Il2CppInterop ("Method not
+  found: ReadOnlySpan`1.GetPinnableReference") (D11, tool only), so screenshots are taken from outside the game.
 - Not the library, seen the same night: POG Timer 1.0.2 (Thunderstore) logged "Hook failed" four times a second
   while the menu was up; 1.1.0, which does not, was published 2026-11-19. POGLanTest (the test tool) had four
   defects, fixed during the test: hosting from the main menu never loaded a scene, a client that joined before the

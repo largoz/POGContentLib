@@ -150,13 +150,27 @@ namespace POGContentLib.Items
             item.m_staminaPenaltyOnPickup = def.PickupStaminaPenalty;
             item.m_movementFactorWhenHeld = def.MovementFactorWhenHeld;
 
-            // Icon: direct override wins, else resolve a game sprite by name.
+            // Icon: direct override wins, then a game sprite by name, then a PNG file of the mod's own.
+            // None of them: the shell's icon stays (D10: the glow berry showed the diamond in the client's toast).
             if (def.Icon != null) item.m_itemIcon = def.Icon;
             else if (!string.IsNullOrEmpty(def.IconSpriteName))
             {
                 var sprite = GameAssets.FindSprite(def.IconSpriteName);
                 if (sprite != null) item.m_itemIcon = sprite;
             }
+            else if (!string.IsNullOrEmpty(def.IconFile))
+            {
+                Sprite fileIcon = null;
+                try { fileIcon = AssetLoader.LoadPngAsSprite(def.IconFile); }
+                catch (Exception ex) { MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: icon file '{def.IconFile}': {ex.Message}"); }
+                if (fileIcon != null)
+                {
+                    item.m_itemIcon = fileIcon;
+                    MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: icon from '{System.IO.Path.GetFileName(def.IconFile)}' ({fileIcon.texture.width}x{fileIcon.texture.height}).");
+                }
+            }
+            else if (def.Visual?.Kind == ItemVisualKind.ObjFile)
+                MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: a model of its own but no icon (Icon, IconSpriteName or IconFile): it shows the shell's icon.");
 
             // Tooltip/name. Registering the translation is only half of it — the item must also POINT
             // at our term, otherwise it keeps the shell's ids and shows "Diamond / Best rock in world".

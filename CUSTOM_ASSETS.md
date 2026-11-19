@@ -27,8 +27,9 @@ a capability in POGContentLib).
 
 ## Building the bundle
 
-1. Unity **2022.3.62f2** with **HDRP 14** — the game's exact version. A different version is the
-   usual cause of magenta materials or a bundle that refuses to load.
+1. The game's exact Unity version: **6000.3.24f1** on build 26668562 (2026-11-19; it was 2022.3.62f2 with HDRP 14
+   before the 2026-11 updates), with the HDRP that editor ships. A different version is the usual cause of magenta
+   materials or a bundle that refuses to load. Check the version again after every game update.
 2. Build your item as a **prefab**: mesh + materials + any particle systems / lights / animation.
    Do not attach your own scripts.
 3. Assign an AssetBundle name to the prefab and build for **StandaloneWindows64**.
@@ -65,14 +66,62 @@ right Unity version", not as a fix.
 
 Set `RepairShaders = false` on the `ItemVisual` if you would rather see the failure untouched.
 
-## Without the Unity Editor
+## Your own model without Unity (OBJ)
 
-If you do not want to open Unity at all:
+For a static model you do not need Unity at all. Export it as OBJ (with its `.mtl`) and point the item at it:
 
-- **PNG icon** — `ItemVisual.Png("Mods/MyPack/icon.png")` works today, no editor needed.
+```csharp
+Content.Items.Register(new ModItemDefinition
+{
+    ModId = "MyPack", ContentId = "GlowBerry",
+    Visual = ItemVisual.Obj(pathToObj),          // GlowBerry.obj, GlowBerry.mtl next to it
+    IconFile = pathToPng,                        // the inventory icon; without one the item shows the shell's
+});
+```
+
+The library parses the OBJ and its `.mtl`, builds a `Mesh` with one submesh per material, creates the materials
+on the game's own `HDRP/Lit`, and puts them into the shell's own renderers, so the world view, the in-hand view and
+inventory hiding keep working (the renderers stay under `PickupItem`/`HeldItem`; see
+`docs/design/item-chain.md`). Every load is logged: vertices, triangles, submeshes with their material names,
+and collision hulls.
+
+Find the files at run time, not by a fixed path: under Gale a mod's folder is `Mods/<Author>-<Mod>/`, under
+r2modman it can sit deeper. `samples/ShopDemo/ShopDemoMod.cs` searches `Mods/` for its model and finds its icon
+next to it.
+
+**Exporting.** Use **Y up / -Z forward** (the Blender default) and triangulate. OBJ is right-handed, Unity is
+left-handed, so the loader negates Z; the model arrives upright and unmirrored. One Blender unit = one metre =
+one Unity unit, so model at real scale (a hand-held item is about 0.1–0.2 m), with the origin at the bottom centre.
+
+**Materials.** `Kd` → `_BaseColor`, `Ke` → `_EmissiveColor`, `Pm` → `_Metallic`, `Pr` → `_Smoothness`
+(as `1 - roughness`); `Ns` is the fallback when `Pr` is absent. Blender does **not** write `Pm`/`Pr` by default,
+so metals export as matte plastic unless a post-export step adds them.
+
+> **Do not ship fully metallic materials.** A metal is lit almost entirely by what it reflects, and most of this
+> game happens in a mine with nothing to reflect: `Pm 1.0` arrives on screen as a black silhouette. Keep `Pm` at
+> 0 (or below about 0.2) and put the look in the base colour. Judge a model under dark lighting.
+
+**Collision.** Objects named `UCX_*` (also `UBX_`/`USP_`, or any name containing "collision") are kept out of
+the render mesh and become convex `MeshCollider`s. A moving Rigidbody can only use convex shapes, so a concave
+object needs several hulls; keep each under 255 faces. A model with no hulls gets the shell's collider refitted
+to its bounds: a box around the model, not the model.
+
+**Icon.** An OBJ makes no icon. Set `IconFile` (a square PNG with a transparent background), `IconSpriteName`
+(a sprite the game already has) or `Icon`. The sample renders its icon from the model with Blender:
+`samples/ShopDemo/model/make_icon.py`.
+
+**In a shop.** A shop slot places its item by the slot's holder, and some holders are posed for a lying item
+(the starter shop's torch slot). The library stands a mod item upright there on the host before it spawns, and
+every client gets the same pose.
+
+Worked examples: `samples/ShopDemo/model/` (a berry made by a script, its materials and its icon) and the Ember
+Lantern in POGCustomItems (several materials, four `UCX_` hulls).
+
+## Other no-editor options
+
+- **PNG icon as the visual** — `ItemVisual.Png("Mods/MyPack/icon.png")`.
 - **Reskin a vanilla mesh** — `ItemVisual.GameMesh("Item_SpeakingStone", "SpeakingStone_01")` clones
   an existing game mesh; combine with `Tint` and a `GlowCapability` to make it look different.
-- Loose OBJ mesh loading is on the roadmap, not implemented.
 
 ## Copying a vanilla look
 

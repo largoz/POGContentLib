@@ -31,18 +31,29 @@ namespace POGContentLib.Shops
     }
 
     /// <summary>
-    /// A slot hands every peer its item through <c>SetShopItemInternal</c> (the host from its own RPC, a client from
-    /// <c>ResolveShopItemOnClient</c>; build 26668562). The item was placed earlier, by the slot's holder pose, which is
-    /// made for the slot's vanilla item: the torch slot lays its torch flat, and laid the Ember Lantern on its side too
-    /// (2026-11-19, host and client). A mod item is stood upright here, on every peer, keeping its position and its
-    /// heading.
+    /// D8: a shop slot places its item by the slot's holder (<c>ShopLocation.get_SpawnTransform</c>: holder pose times
+    /// the inverse of the item's <c>m_standingTransform</c>; build 26668562), and the holder is posed for the slot's
+    /// vanilla item: the torch slot lays its torch flat and laid the Ember Lantern on its side too (2026-11-19, host
+    /// and client). Right after that, still on the host and before the item spawns, <c>CreateShopItems</c> calls
+    /// <c>ClientNetworkParenting.SetParentBeforeSpawn(slot)</c>, which records the item's pose relative to the slot;
+    /// every client puts the item at that recorded pose (<c>OnNetworkSpawn</c> -> <c>Synch</c>). A mod item is stood
+    /// upright just before that record, so host and clients get the same upright pose.
+    /// Earlier tries that never ran on the host: <c>ShopLocation.SetShopItemInternal</c> (only the client's
+    /// <c>ResolveShopItemOnClient</c> calls it) and <c>SpawnerBase.InstantiateNetworkPrefab</c> (no log line in the
+    /// 2026-11-19 08:33 run; CreateShopItems reaches it through the vtable).
     /// </summary>
-    [HarmonyPatch(typeof(ShopLocation), nameof(ShopLocation.SetShopItemInternal))]
-    internal static class Patch_ShopLocation_SetShopItemInternal
+    [HarmonyPatch(typeof(Il2Cpp.ClientNetworkParenting), nameof(Il2Cpp.ClientNetworkParenting.SetParentBeforeSpawn))]
+    internal static class Patch_ClientNetworkParenting_SetParentBeforeSpawn
     {
-        static void Postfix(ShopLocation __instance, Il2Cpp.InventoryItem __0)
+        static void Prefix(Il2Cpp.ClientNetworkParenting __instance, Unity.Netcode.NetworkObject parent)
         {
-            try { ShopItemPose.StandUpright(__instance, __0); }
+            try
+            {
+                if (__instance == null || parent == null) return;
+                var slot = parent.GetComponent<ShopLocation>();
+                if (slot == null) return;
+                ShopItemPose.StandUpright(slot, __instance.GetComponent<Il2Cpp.InventoryItem>());
+            }
             catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] standing an item upright: {ex.GetType().Name}: {ex.Message}"); }
         }
     }
@@ -61,17 +72,27 @@ namespace POGContentLib.Shops
 
             var t = item.transform;
             float tilt = UnityEngine.Vector3.Angle(t.up, UnityEngine.Vector3.up);
-            if (tilt <= TiltToleranceDegrees) return;
+            string key = slot.gameObject.name + "|" + item.m_itemID;
+            bool first = _logged.Add(key);
+            if (tilt <= TiltToleranceDegrees)
+            {
+                if (first) MelonLogger.Msg($"[POGContentLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': upright already (tilt {tilt:0}°).");
+                return;
+            }
 
-            // Heading: where the item's front pointed, flattened; a front that pointed straight up or down gives no
-            // heading, so the direction its top pointed is used instead.
+            // Turn about the standing point (the spot that sits on the holder), so the item keeps its place on the
+            // shelf. Heading: where the item's front pointed, flattened; a front that pointed straight up or down
+            // gives no heading, so the direction its top pointed is used instead.
+            var stand = item.m_standingTransform;
+            var pivot = stand != null ? stand.position : t.position;
             var heading = UnityEngine.Vector3.ProjectOnPlane(t.forward, UnityEngine.Vector3.up);
             if (heading.sqrMagnitude < 1e-4f) heading = UnityEngine.Vector3.ProjectOnPlane(t.up, UnityEngine.Vector3.up);
             if (heading.sqrMagnitude < 1e-4f) heading = UnityEngine.Vector3.forward;
-            t.rotation = UnityEngine.Quaternion.LookRotation(heading.normalized, UnityEngine.Vector3.up);
+            var upright = UnityEngine.Quaternion.LookRotation(heading.normalized, UnityEngine.Vector3.up);
+            t.rotation = upright;
+            if (stand != null) t.position += pivot - stand.position;
 
-            string key = slot.gameObject.name + "|" + item.m_itemID;
-            if (_logged.Add(key))
+            if (first)
                 MelonLogger.Msg($"[POGContentLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': stood upright (the slot tilted it {tilt:0}°).");
         }
     }
