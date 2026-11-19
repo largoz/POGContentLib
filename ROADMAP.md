@@ -32,7 +32,7 @@ option goes first if it can be loosened later without breaking published mods.
 
 ### Phase 0. Decisions (no code)
 
-- [ ] 0.1 Review LethalLib (the task in "Design review" below) and write the findings there.
+- [x] 0.1 Review LethalLib (the task in "Design review" below) and write the findings there. *(2026-11-19)*
 - [ ] 0.2 Put the three design questions to the user again, with the findings, and write the answers there. If the
       user still has no preference, propose the strict options and get a yes; do not decide for the user.
 - [ ] 0.3 A fourth question, new: **may a mod add to vanilla slots in the first release at all?** Recommended: no.
@@ -88,7 +88,9 @@ Each line is a run on both machines with screenshots and both logs, written into
 - [ ] 2.10 Open defects: D12 (price tags over empty slots for a player without the mod) and "Smaller defects".
       Each is fixed or written into the README as a known limit.
 - [ ] 2.11 A game update shows as one clear log line: every game member a patch uses is in the compatibility probe
-      (on 2026-11-14 one was missing), and a test holds that.
+      (on 2026-11-14 one was missing), and a test holds that. And the library alone, with no content mod, changes
+      nothing in the game: the same network prefab list, no shop or loot change (LethalLib #103 shows what users
+      expect).
 
 Done when: every feature the README promises has its run.
 
@@ -270,11 +272,67 @@ If taken, the plan changes so: R4 (a new slot at a seller as the main path) come
 the same spirit (mods stop changing the vanilla merchants' odds), the user said yes to it, and it waits for these
 decisions; R3 and question 3 share the public API.
 
-- [ ] **Review LethalLib** (https://github.com/EvaisaDev/LethalLib), for a later session (the user will hand it to
-      Opus): how it registers items, shop items and weights; what it leaves to each mod's config; what the regulator
-      mods add on top; what its authors and users complain about; what to take and what to avoid here. Read the
-      source and the issues, not summaries; write the findings into this section, then put the three questions to
-      the user again.
+- [x] **Review LethalLib** (https://github.com/EvaisaDev/LethalLib). **Done 2026-11-19** from the source (main
+      `bc9d11f`, 2026-04-01), its 67 GitHub issues, the README of its successor DawnLib
+      (https://github.com/TeamXiaolan/DawnLib, `2ed587e`, 2026-11-01, by the people who now maintain LethalLib) with
+      its weight code (`src/API/Weights`), and LethalQuantities' README. Lethal Company is a Mono game: a mod there
+      ships its own MonoBehaviours in an asset bundle, which IL2CPP does not allow here.
+
+      What they do:
+      - **Items and enemies go into one weighted list per moon** (`level.spawnableScrap`, `level.Enemies`; an integer
+        `rarity` per moon, per "vanilla moons", "modded moons" or all; `Items.AddScrapItemToLevel`,
+        `Enemies.RegisterEnemy`). Nothing protects vanilla content: dilution is exactly ours.
+      - **The shop is a catalog, not slots**: `RegisterShopItem(item, price)` appends to the terminal's buy list.
+        Nothing is displaced, so a war for places cannot happen there. The war for slots is a problem of this game's
+        physical counters, and R4 (a mod's own slot at a seller) is the catalog's equivalent here.
+      - **Weights are left to each mod's own config**, which every player must have the same (#10: "turn the weights
+        to 0 in the config file; everyone needs to have the same config"). Big packs then use **regulator mods**:
+        LethalQuantities (all settings off by default; per-moon rarity and amounts for vanilla and modded items,
+        enemies, traps; a web editor), CentralConfig.
+      - **Enemies**: the library only registers and places them (rarity, inside / outside / daytime, a bestiary
+        entry); behaviour is the modder's own `EnemyAI` subclass, which Mono makes free. No behaviour toolkit.
+      - Removal and change APIs exist (`RemoveScrapFromLevels`, `RemoveShopItem`, `UpdateShopItemPrice`), for items
+        registered through it; #83: removing a shop item shifted the terminal's sales by one, unfixed.
+
+      What hurt their users (issues):
+      - **Saves by index**: a save's items turned into other items after mods changed (#5: "the game uses indexing";
+        the opt-in fix `EnableItemSaveFix` warns it "may cause save corruptions"). Ours are hashed from `mod:id`,
+        which is the right call; keep it and prove it (Phase 2.2).
+      - **A library update broke every mod on it**: after 0.14.0 "only the host can see modded items" (#56, #59, a
+        network-registration regression); on game version 50 no enemies spawned at all, vanilla ones included (#72,
+        several users; #88). (#104, the same on version 72, was closed as probably another mod.) A bug in the shared
+        layer breaks vanilla play for everyone. Our D15 was of that kind.
+      - **Installing the library alone must change nothing**: #103 blamed it for breaking vanilla lobbies (it was
+        another library). Users expect a library with no content on it to be invisible.
+
+      What the successor (DawnLib, "a modern API ... was CodeRebirthLib") changed:
+      - **Everything has a namespaced key**, vanilla content included (`NamespacedKey.From("facility_meltdown",
+        "geiger_counter")`), and **tags** on moons and content. Weights are given per key, per tag or globally, first
+        match wins (`ProviderTable`), and may depend on the context (moon, weather) and change at runtime.
+      - **Two layers**: DawnLib, "hands-off" (registration only), and DuskMod, "more opinionated" (bundle loading,
+        config generation, content with no code).
+      - **Registries freeze** once the vanilla content is in (`OnFreeze`).
+      - The README says content made with DawnLib is "likely unsupported" by LethalQuantities and CentralConfig,
+        because its weights are dynamic; they paired with one config mod (LunarConfig) instead.
+
+      What follows for this library:
+      1. Dilution is real and in Lethal Company it was never solved inside the libraries; players fixed it with
+         separate regulator mods, years later. A library that owns its weights should give the user the control
+         itself (the vanilla floor, a per-mod multiplier), or publish its weights so a regulator can change them.
+      2. Where possible, do not compete for places at all: their shop never had the problem because it appends.
+         R4 first; vanilla slots later, behind the floor.
+      3. Their own split, after years, is ours: a hands-off core and an opinionated layer on top. It supports
+         question 3 (Shops as a mod of its own).
+      4. Ids that survive (saves, slots) and a library that is invisible without content are the two things their
+         users suffered from most. Both are in the plan: 2.2 (saves) and a test that the library alone changes
+         nothing (added to 2.11).
+      5. Nothing there lets one mod rewrite another's entries through the library, except the remove/change APIs
+         for the mod's own content. That supports question 2 (no cross-mod `patch`).
+      6. Mobs: their modders write behaviour as MonoBehaviours, which IL2CPP does not allow. The tooling this library
+         would need (states, transitions, injected classes) has no model there: plan it from the game's own FSM
+         (`_research/MOBS_NATIVE.md`), not from LethalLib.
+      Not checked: the claims in the user's pasted notes about SpawnWeightOverrides; DawnLib's source beyond the
+      weights; LunarConfig.
 
 ## Pre-release gate — checks and rework before anything is published (review of 2026-11-14)
 
