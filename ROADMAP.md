@@ -99,6 +99,59 @@ the PC's test changes after each session.
       Also to decide with it: D12 (price tags over empty slots for a client without the mod), and shop files
       without a DLL (they add slots, so they are network content, but there is no melon to list).
 
+## Design review 2026-11-19: what the library decides for mod authors (open: the user has not decided)
+
+The user's doubt: the library decides things for the mod author and can change the balance of the whole game; with
+many content mods it becomes a war for slots and weights; one mod can rewrite another's weights through the library;
+maybe slots should be private. Asked for an honest opinion, the answer on all three questions below was "I do not
+know yet". **Nothing here is decided or built.** Agreed by the user: do well what cannot be changed after release;
+building for needs nobody has yet is a known habit in this project.
+
+Facts:
+- **Dilution.** In a vanilla slot with one item, every mod entry at the standard weight 10 is as likely as the
+  vanilla item: vanilla keeps 1/(N+1) with N mods (50 % with 1, 17 % with 5, about 1 % with 100). The host's
+  `VanillaWeight` setting is a weight, so it has to be retuned with every mod added.
+- **`patch`** (`SHOPS.md`, "Rules when several mods meet"): a mod can change entries another mod put in a slot if it
+  lists that mod in `requires`; the last `patch` wins; patching vanilla content needs nothing.
+- **Scale.** 11 packages for the game on Thunderstore on 2026-11-14, none adds items or shops. The certain consumer
+  of the library is the user's own packs.
+- **Lethal Company** (the user's notes of 2026-11-19, not checked here): LethalLib registers items and monsters with
+  integer weights per moon, one weighted pool, nothing protects vanilla content; big packs fix that afterwards with
+  each mod's config and with separate regulator mods (LethalQuantities, SpawnWeightOverrides) that list everything
+  and let the pack maker change the weights.
+- **The library's rules are the default path, not a lock.** Any mod can still change anything with Harmony. A
+  private slot protects from accidents and from the easy path, not from intent.
+
+The three questions, with the recommendation given to the user (2026-11-19):
+1. **Who has the last word on chances.** Recommended: the host. A **vanilla floor** replaces `VanillaWeight`: in a
+   vanilla slot the game's own items keep at least X % (default 50), the mods' entries share the rest by weight;
+   when the weights alone leave vanilla more than X, the weights stand (so one mod at weight 10 behaves as today).
+   One slider on a POG Config page (POG Config optional). Later, if asked for: a multiplier per content mod (off,
+   x0.5, x1, x2). Fine control stays where it is: a file in `UserData/POGContentLib/Shops` replaces a mod's file.
+2. **May a mod change another mod's entries.** Recommended: not in the first release. Mods only `add`: to vanilla
+   slots (inside the mods' share) and to their own slots; a mod's slot is private. `patch`, `requires`, the order
+   and the history leave the mod-facing format; changing someone's entries is the host's power. If addon makers ask
+   later: `"open": true` on a slot, set by its owner.
+3. **Shops as a mod of their own.** Recommended: yes, before release. The core does one thing (a mod item works in
+   multiplayer) and decides nothing about balance; weights, slots and the settings page ship as a separate mod. The
+   seam is there (`ShopsPlugin` is a plugin); the cost is a public API in place of `internal` access (R3 needs the
+   same).
+
+The rule behind all three: before release take the stricter or smaller option wherever loosening it later breaks
+nobody and tightening it later would. A private slot can be opened later, `patch` can be added later, a split
+package can be merged later; the reverse of each strands mods already published. The vanilla floor is the one that
+has to be chosen before release either way, because it changes what a weight means.
+
+If taken, the plan changes so: R4 (a new slot at a seller as the main path) comes before more work on `add`; R2 is in
+the same spirit (mods stop changing the vanilla merchants' odds), the user said yes to it, and it waits for these
+decisions; R3 and question 3 share the public API.
+
+- [ ] **Review LethalLib** (https://github.com/EvaisaDev/LethalLib), for a later session (the user will hand it to
+      Opus): how it registers items, shop items and weights; what it leaves to each mod's config; what the regulator
+      mods add on top; what its authors and users complain about; what to take and what to avoid here. Read the
+      source and the issues, not summaries; write the findings into this section, then put the three questions to
+      the user again.
+
 ## Pre-release gate — checks and rework before anything is published (review of 2026-11-14)
 
 Nothing of the Shops module is pushed or published. Until the first release the file format and the ids
@@ -435,9 +488,10 @@ Open unless marked. "In game" = seen on build 26668562; "from the code" = read, 
 
 ### Order
 
-1. Silent failures and the single pick: small, safe, independent of everything else.
-2. G1 and G2, then decide R1 and R2.
-3. G3–G6.
+1. Silent failures and the single pick: small, safe, independent of everything else. *(done)*
+2. G1 and G2, then decide R1 and R2. *(2026-11-19: G1 shown over LAN, G2 and G3 done, R1 done; R2 has the user's
+   yes and waits for the design review near the top of this file)*
+3. G3–G6. *(G4: a purchase from a new slot by a client is seen, run 21; theft and the seller's death are not)*
 4. R3–R5, then the first release.
 
 ---
