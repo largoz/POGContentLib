@@ -38,7 +38,7 @@ vfx:lightning
 Run the game and read `MelonLoader/Latest.log`:
 
 ```
-[POGContentLib.Probe] VFX matching 'lightning' (N) — use as ParticleEffect.FromGameObject(id, ROOT, CHILD):
+[POGLib.Probe] VFX matching 'lightning' (N) — use as ParticleEffect.FromGameObject(id, ROOT, CHILD):
     SomePrefab / VFX_Lightning_Small
 ```
 

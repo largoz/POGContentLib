@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using MelonLoader;
 using MelonLoader.Utils;
-using POGContentLib.Core;
-using POGContentLib.Shops.Model;
+using POGLib.Core;
+using POGLib.Shops.Model;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// Shops domain plugin (docs/design/shops.md). Reads every shop file, folds them into one
@@ -18,7 +18,7 @@ namespace POGContentLib.Shops
     /// Shop files are found:
     ///   • anywhere under Mods/ named "pogshop.json" or "*.pogshop.json" (how mod packages ship them —
     ///     Gale keeps Mods/&lt;Author&gt;-&lt;Name&gt;/…, r2modman nests packages in Mods/&lt;package&gt;/);
-    ///   • in UserData/POGContentLib/Shops/*.json (local files, e.g. the dev tools' export);
+    ///   • in UserData/POGLib/Shops/*.json (local files, e.g. the dev tools' export);
     ///   • added from code with Content.Shops.AddFile(...).
     /// The catalog is built on the first scene load, after every mod's OnInitializeMelon has run.
     /// </summary>
@@ -37,16 +37,16 @@ namespace POGContentLib.Shops
         private List<ShopFile> _files = new List<ShopFile>();
         private readonly List<Diagnostic> _loadDiagnostics = new List<Diagnostic>();
 
-        public static string UserShopsDirectory => Path.Combine(MelonEnvironment.UserDataDirectory, "POGContentLib", "Shops");
+        public static string UserShopsDirectory => Path.Combine(MelonEnvironment.UserDataDirectory, "POGLib", "Shops");
 
-        public const string PreferencesCategory = "POGContentLib_Shops";
+        public const string PreferencesCategory = "POGLib_Shops";
         private MelonPreferences_Entry<double> _vanillaWeight;
 
         public void Build(PluginGraph graph)
         {
             Instance = this;
             SlotSync.Register();
-            var cat = MelonPreferences.CreateCategory(PreferencesCategory, "POGContentLib shops");
+            var cat = MelonPreferences.CreateCategory(PreferencesCategory, "POGLib shops");
             _vanillaWeight = cat.CreateEntry("VanillaWeight", ShopCatalogOptions.StandardVanillaWeight, "Vanilla item weight",
                 $"When a mod adds items to a game shop slot, each of the game's own items there gets this weight. " +
                 $"Mods weigh their items against {ShopCatalogOptions.StandardVanillaWeight:0}: a mod item of weight {ShopCatalogOptions.StandardVanillaWeight:0} " +
@@ -84,7 +84,7 @@ namespace POGContentLib.Shops
             if (!_badWeightReported)
             {
                 _badWeightReported = true;
-                MelonLogger.Warning($"[POGContentLib] [Shops] {PreferencesCategory}.VanillaWeight = {w} is not a number >= 0; using {ShopCatalogOptions.StandardVanillaWeight:0}.");
+                MelonLogger.Warning($"[POGLib] [Shops] {PreferencesCategory}.VanillaWeight = {w} is not a number >= 0; using {ShopCatalogOptions.StandardVanillaWeight:0}.");
             }
             return new ShopCatalogOptions();
         }
@@ -119,20 +119,20 @@ namespace POGContentLib.Shops
                     _loadDiagnostics.Add(new Diagnostic(Severity.Error, Relative(path), $"cannot read: {ex.Message}"));
                 }
             }
-            // A working copy in UserData/POGContentLib/Shops (what the shop tools save) replaces that mod's
+            // A working copy in UserData/POGLib/Shops (what the shop tools save) replaces that mod's
             // packaged files, so editing a mod's shops never loads the same slots twice.
             string userDir = Path.GetFullPath(UserShopsDirectory);
             var overridden = new HashSet<string>(files.Where(f => IsUserFile(f, userDir)).Select(f => f.Mod), StringComparer.Ordinal);
             foreach (var mod in overridden)
                 foreach (var f in files.Where(f => f.Mod == mod && !IsUserFile(f, userDir)))
-                    _loadDiagnostics.Add(new Diagnostic(Severity.Info, f.SourcePath, $"replaced by your working copy in UserData/POGContentLib/Shops ({mod})"));
+                    _loadDiagnostics.Add(new Diagnostic(Severity.Info, f.SourcePath, $"replaced by your working copy in UserData/POGLib/Shops ({mod})"));
             files = files.Where(f => !overridden.Contains(f.Mod) || IsUserFile(f, userDir)).ToList();
             files.AddRange(_codeFiles);
             _files = files;
             Catalog = ShopCatalog.Build(files, Options());
             Log(_loadDiagnostics);
             Log(Catalog.Diagnostics);
-            MelonLogger.Msg($"[POGContentLib] [Shops] {files.Count} shop file(s) from {files.Select(f => f.Mod).Distinct().Count()} mod(s): " +
+            MelonLogger.Msg($"[POGLib] [Shops] {files.Count} shop file(s) from {files.Select(f => f.Mod).Distinct().Count()} mod(s): " +
                             $"{Catalog.ModSlots.Count} new slot(s), {Catalog.TargetedSlots.Count()} slot(s) with rules, {Catalog.Sellers.Count} merchant(s); order {string.Join(" > ", Catalog.ModOrder)}" +
                             (Catalog.Options.DefaultVanillaWeight != ShopCatalogOptions.StandardVanillaWeight ? $"; vanilla weight {Catalog.Options.DefaultVanillaWeight:0.##} (player setting)" : ""));
         }
@@ -155,7 +155,7 @@ namespace POGContentLib.Shops
                 if (Directory.Exists(UserShopsDirectory))
                     found.AddRange(Directory.EnumerateFiles(UserShopsDirectory, "*.json", SearchOption.TopDirectoryOnly));
             }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] searching for shop files: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] [Shops] searching for shop files: {ex.Message}"); }
             return found.OrderBy(p => p, StringComparer.Ordinal);
         }
 
@@ -169,7 +169,7 @@ namespace POGContentLib.Shops
         {
             foreach (var d in diagnostics)
             {
-                string line = $"[POGContentLib] [Shops] {d.Source}: {d.Message}";
+                string line = $"[POGLib] [Shops] {d.Source}: {d.Message}";
                 switch (d.Severity)
                 {
                     case Severity.Error: MelonLogger.Error(line); break;

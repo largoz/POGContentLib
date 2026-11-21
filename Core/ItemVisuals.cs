@@ -5,7 +5,7 @@ using Il2Cpp;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Reskin helpers: transplant a mesh child from a vanilla prefab, tint the jewel/mesh via
@@ -49,7 +49,7 @@ namespace POGContentLib.Core
                 foreach (var mf in visualSource.GetComponentsInChildren<MeshFilter>(true))
                     if (mf != null) names.Append("\n    ").Append(mf.gameObject.name);
                 MelonLogger.Warning(
-                    $"[POGContentLib] Reskin FAILED: no mesh child matching '{childName}' in " +
+                    $"[POGLib] Reskin FAILED: no mesh child matching '{childName}' in " +
                     $"'{visualSource.name}' — the item keeps its shell mesh. Meshes available:{names}");
                 return;
             }
@@ -69,9 +69,9 @@ namespace POGContentLib.Core
 
             // The item caches mesh bounds for tooltip placement and the inventory silhouette.
             try { target.GetComponent<InventoryItem>()?.RefreshMeshInfo(); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] RefreshMeshInfo failed: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] RefreshMeshInfo failed: {ex.Message}"); }
 
-            MelonLogger.Msg($"[POGContentLib] Reskin: '{childName}' mesh applied to {swapped} renderer(s) on {target.name}.");
+            MelonLogger.Msg($"[POGLib] Reskin: '{childName}' mesh applied to {swapped} renderer(s) on {target.name}.");
         }
 
 
@@ -103,19 +103,19 @@ namespace POGContentLib.Core
                 if (Quaternion.Angle(before, Quaternion.identity) > 0.5f)
                 {
                     mf.transform.rotation = target.transform.rotation;
-                    MelonLogger.Msg($"[POGContentLib] Custom mesh '{mesh.name}': '{mf.gameObject.name}' was turned {before.eulerAngles} " +
+                    MelonLogger.Msg($"[POGLib] Custom mesh '{mesh.name}': '{mf.gameObject.name}' was turned {before.eulerAngles} " +
                                     "from the item; set upright to the item.");
                 }
                 swapped++;
             }
 
             try { target.GetComponent<InventoryItem>()?.RefreshMeshInfo(); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] RefreshMeshInfo failed: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] RefreshMeshInfo failed: {ex.Message}"); }
 
             if (swapped == 0)
-                MelonLogger.Warning($"[POGContentLib] Custom mesh '{mesh.name}': no renderer on {target.name} to apply it to.");
+                MelonLogger.Warning($"[POGLib] Custom mesh '{mesh.name}': no renderer on {target.name} to apply it to.");
             else
-                MelonLogger.Msg($"[POGContentLib] Custom mesh '{mesh.name}' applied to {swapped} renderer(s) on {target.name}.");
+                MelonLogger.Msg($"[POGLib] Custom mesh '{mesh.name}' applied to {swapped} renderer(s) on {target.name}.");
         }
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace POGContentLib.Core
                 RefitToBounds(target, solid, visualMesh, triggers);
 
             try { target.GetComponent<InventoryItem>()?.RefreshMeshInfo(); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] RefreshMeshInfo failed: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] RefreshMeshInfo failed: {ex.Message}"); }
         }
 
         private const string ModCollisionChild = "ModCollision";
@@ -198,7 +198,7 @@ namespace POGContentLib.Core
                 added++;
             }
 
-            MelonLogger.Msg($"[POGContentLib] Colliders: replaced {solid.Count} shell collider(s) with " +
+            MelonLogger.Msg($"[POGLib] Colliders: replaced {solid.Count} shell collider(s) with " +
                             $"{added} convex hull(s) under '{anchor.name}/{ModCollisionChild}' " +
                             $"(layer={LayerMask.LayerToName(layer)}, {triggers} trigger(s) left untouched).");
         }
@@ -268,7 +268,7 @@ namespace POGContentLib.Core
                 // A MeshCollider already follows a mesh; leave it to whoever set it.
             }
 
-            MelonLogger.Msg($"[POGContentLib] Colliders: refitted {refitted}/{solid.Count} shell collider(s) to " +
+            MelonLogger.Msg($"[POGLib] Colliders: refitted {refitted}/{solid.Count} shell collider(s) to " +
                             $"the model bounds {bounds.size} ({triggers} trigger(s) left untouched). " +
                             "Ship UCX_ hulls in the model for an exact fit.");
         }
@@ -308,7 +308,7 @@ namespace POGContentLib.Core
                     if (transforms[i] != null && transforms[i] != visualSource.transform)
                         names.Append("\n    ").Append(transforms[i].name);
                 MelonLogger.Warning(
-                    $"[POGContentLib] Reskin FAILED: no child matching '{childName}' in " +
+                    $"[POGLib] Reskin FAILED: no child matching '{childName}' in " +
                     $"'{visualSource.name}' — the item will keep its shell mesh. Available children:{names}");
                 return;
             }
@@ -374,7 +374,7 @@ namespace POGContentLib.Core
             var replacement = Shader.Find(GameNames.Shader.HdrpLit);
             if (replacement == null)
             {
-                MelonLogger.Warning($"[POGContentLib] Cannot repair bundle shaders: '{GameNames.Shader.HdrpLit}' not found.");
+                MelonLogger.Warning($"[POGLib] Cannot repair bundle shaders: '{GameNames.Shader.HdrpLit}' not found.");
                 return 0;
             }
 
@@ -395,7 +395,7 @@ namespace POGContentLib.Core
                 r.materials = mats;
             }
             if (fixedCount > 0)
-                MelonLogger.Msg($"[POGContentLib] Repaired {fixedCount} bundle material(s) onto {GameNames.Shader.HdrpLit}. " +
+                MelonLogger.Msg($"[POGLib] Repaired {fixedCount} bundle material(s) onto {GameNames.Shader.HdrpLit}. " +
                                 "Build the bundle against the game's Unity/HDRP version to avoid this.");
             return fixedCount;
         }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using Il2CppI2.Loc;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Tooltip/name fallback for mod content. The game uses I2 Localization; rather than

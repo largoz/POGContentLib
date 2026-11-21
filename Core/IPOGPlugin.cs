@@ -1,6 +1,6 @@
 using System;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Lifecycle stages bound to real MelonLoader + NGO events, not a one-shot init.
@@ -33,7 +33,7 @@ namespace POGContentLib.Core
     }
 
     /// <summary>
-    /// A modular POGContentLib plugin (Bevy-style Plugin). Each domain (Items, Mobs,
+    /// A modular POGLib plugin (Bevy-style Plugin). Each domain (Items, Mobs,
     /// Levels…) implements it and contributes its systems to the graph per stage.
     /// </summary>
     public interface IPOGPlugin

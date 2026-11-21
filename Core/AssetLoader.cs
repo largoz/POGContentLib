@@ -3,7 +3,7 @@ using Il2CppInterop.Runtime;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Asset loader. AssetBundle (Unity 2022.3.62f2 / HDRP 14) + loose PNG→Sprite.
@@ -20,11 +20,11 @@ namespace POGContentLib.Core
             var bundle = AssetBundle.LoadFromFile(path);
             if (bundle == null)
             {
-                MelonLogger.Error($"[POGContentLib] Failed to load AssetBundle: {path}");
+                MelonLogger.Error($"[POGLib] Failed to load AssetBundle: {path}");
                 return null;
             }
             _bundles[path] = bundle;
-            MelonLogger.Msg($"[POGContentLib] Loaded AssetBundle: {path}");
+            MelonLogger.Msg($"[POGLib] Loaded AssetBundle: {path}");
             return bundle;
         }
 
@@ -34,7 +34,7 @@ namespace POGContentLib.Core
             if (bundle == null) return null;
             var obj = bundle.LoadAsset(assetName, Il2CppType.Of<T>());
             var cast = obj != null ? obj.TryCast<T>() : null;
-            if (cast == null) MelonLogger.Warning($"[POGContentLib] Asset '{assetName}' missing/wrong type in bundle.");
+            if (cast == null) MelonLogger.Warning($"[POGLib] Asset '{assetName}' missing/wrong type in bundle.");
             return cast;
         }
 

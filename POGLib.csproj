@@ -4,13 +4,13 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>POGContentLib</RootNamespace>
-    <AssemblyName>POGContentLib</AssemblyName>
+    <RootNamespace>POGLib</RootNamespace>
+    <AssemblyName>POGLib</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup>
     <!-- The folder that holds MelonLoader\net6 and MelonLoader\Il2CppAssemblies. The default assumes
-         this project sits at <game>\ModSource\POGContentLib; override with -p:GameDir=... (for a Gale
+         this project sits at <game>\ModSource\POGLib; override with -p:GameDir=... (for a Gale
          profile: -p:GameDir=~/.local/share/com.kesomannen.gale/pit-of-goblin/profiles/Default). -->
     <GameDir Condition="'$(GameDir)' == ''">$(MSBuildThisFileDirectory)..\..</GameDir>
     <MelonDir>$(GameDir)\MelonLoader\net6</MelonDir>

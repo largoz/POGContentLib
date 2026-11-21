@@ -5,7 +5,7 @@ using Il2CppGame.Journal;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// D6: mod items in the journal. The game never creates item entries in code: each journal tab
@@ -24,7 +24,7 @@ namespace POGContentLib.Items
         static void Prefix(UI_JournalGroupItems __instance)
         {
             try { JournalEntries.AddModEntries(__instance); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib.Items] Journal entries: {ex.GetType().Name}: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib.Items] Journal entries: {ex.GetType().Name}: {ex.Message}"); }
         }
     }
 
@@ -94,15 +94,15 @@ namespace POGContentLib.Items
                 entries.Add(copy);
                 present.Add(nameKey);
                 added++;
-                MelonLogger.Msg($"[POGContentLib.Items] Journal: {def.ContentId} listed under {tab.m_itemGroup} (shows once discovered; icon {(icon == null ? "none" : shellIcon ? "the shell's" : "its own")}).");
+                MelonLogger.Msg($"[POGLib.Items] Journal: {def.ContentId} listed under {tab.m_itemGroup} (shows once discovered; icon {(icon == null ? "none" : shellIcon ? "the shell's" : "its own")}).");
             }
             if (added > 0)
-                MelonLogger.Msg($"[POGContentLib.Items] Journal tab {tab.m_itemGroup}: {added} mod item(s) added to its {entries.Count} entries.");
+                MelonLogger.Msg($"[POGLib.Items] Journal tab {tab.m_itemGroup}: {added} mod item(s) added to its {entries.Count} entries.");
         }
 
         private static Sprite TemplateIcon(ModItemDefinition def)
         {
-            var content = POGContentLib.Core.CoreServices.Content;
+            var content = POGLib.Core.CoreServices.Content;
             if (content == null) return null;
             foreach (var prefab in content.AllPrefabs)
                 if (prefab != null && ReferenceEquals(content.GetDefinitionByHash(prefab.GlobalObjectIdHash), def))
@@ -110,6 +110,6 @@ namespace POGContentLib.Items
             return null;
         }
 
-        private static string ContentRegistryId(ModItemDefinition def) => POGContentLib.Core.ContentRegistry.FullId(def.ModId, def.ContentId);
+        private static string ContentRegistryId(ModItemDefinition def) => POGLib.Core.ContentRegistry.FullId(def.ModId, def.ContentId);
     }
 }

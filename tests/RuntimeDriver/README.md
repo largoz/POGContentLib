@@ -1,4 +1,4 @@
-# Runtime driver — POGContentLib in the real game, no mouse
+# Runtime driver — POGLib in the real game, no mouse
 
 A throwaway MelonMod that plays the game from inside and logs one `[DRIVER] …` line per step; `run.sh` launches
 the game, screenshots, closes it and cleans up. This is how the Shops module was checked on 2026-11-12. Never ship
@@ -8,14 +8,14 @@ launch; never while the user plays).
 ## Run
 
 ```sh
-dotnet build ../../POGContentLib.csproj -c Release -p:GameDir=$HOME/.local/share/com.kesomannen.gale/pit-of-goblin/profiles/Default
+dotnet build ../../POGLib.csproj -c Release -p:GameDir=$HOME/.local/share/com.kesomannen.gale/pit-of-goblin/profiles/Default
 dotnet build RuntimeDriver.csproj -c Release            # GameDir defaults to the Gale profile
 mkdir -p /tmp/run && printf "dump=1\n" > /tmp/run/driver.txt
 ./run.sh /tmp/run [extra DLL or folder for Mods/ ...]   # POG_TIMEOUT=720 for dungeon runs
 ```
 
 `run.sh` deploys the library build, the driver, the extras and `<out>/driver.txt`; copies `<out>/shops/*.json` to
-`UserData/POGContentLib/Shops/`; shoots `<out>/<name>.png` ~2 s after each `[DRIVER] shot <name>`; stops at
+`UserData/POGLib/Shops/`; shoots `<out>/<name>.png` ~2 s after each `[DRIVER] shot <name>`; stops at
 `[DRIVER] done`; then closes the game and removes everything it deployed (`Mods/` is listed at the end).
 
 ## How it gets into a game

@@ -16,7 +16,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace POGContentLib.RuntimeDriver
+namespace POGLib.RuntimeDriver
 {
     internal static class Explore
     {
@@ -260,7 +260,7 @@ namespace POGContentLib.RuntimeDriver
     }
 }
 
-namespace POGContentLib.RuntimeDriver
+namespace POGLib.RuntimeDriver
 {
     // When the game loads and registers its network prefabs, relative to the session start.
     [HarmonyLib.HarmonyPatch(typeof(Il2CppGame.Networking.NetworkHandler), nameof(Il2CppGame.Networking.NetworkHandler.EnsureNetworkPrefabsRegistered))]

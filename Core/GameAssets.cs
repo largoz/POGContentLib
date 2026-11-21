@@ -1,7 +1,7 @@
 using Il2Cpp;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Lookups for existing game assets by name. Lets content packs reskin with vanilla

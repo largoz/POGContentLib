@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Il2Cpp;
 using MelonLoader;
-using POGContentLib.Core;
-using POGContentLib.Shops.Model;
+using POGLib.Core;
+using POGLib.Shops.Model;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// Mistakes in shop files that would otherwise do nothing without a word: an item that is not loaded,
@@ -20,7 +20,7 @@ namespace POGContentLib.Shops
         /// <summary>How long after a scene's first slot spawned its rules are checked against its slots.</summary>
         public const float SceneCheckDelaySeconds = 5f;
 
-        private const string Tag = "[POGContentLib] [Shops]";
+        private const string Tag = "[POGLib] [Shops]";
         private static readonly HashSet<string> _reported = new HashSet<string>(StringComparer.Ordinal);
         private static bool Once(string key) => _reported.Add(key);
 
@@ -54,11 +54,11 @@ namespace POGContentLib.Shops
             if (!Once("item:" + item)) return;
             // Registered but not built is a different problem from a missing mod or a typo (2026-11-14: every item,
             // when the shells were not in memory): say which.
-            var items = POGContentLib.Items.ItemsPlugin.Instance;
+            var items = POGLib.Items.ItemsPlugin.Instance;
             if (items != null && items.IsRegistered(item))
             {
                 MelonLogger.Warning($"{Tag} item '{item}' ({usedBy}) is registered but its template was not built " +
-                                    "(see the [POGContentLib] lines about its shell above). Shops leave it out.");
+                                    "(see the [POGLib] lines about its shell above). Shops leave it out.");
                 return;
             }
             var near = NearestIds.Of(item, KnownItemIds());

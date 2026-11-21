@@ -3,7 +3,7 @@ using Il2Cpp;
 using UnityEngine;
 using Unity.Netcode;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// Injected per-instance state MonoBehaviour on a mod item. Managed fields do NOT survive

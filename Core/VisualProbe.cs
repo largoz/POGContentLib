@@ -5,7 +5,7 @@ using Il2Cpp;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Runtime inspector for a vanilla item's VISUAL setup — lights, pulse/flicker, particles and
@@ -30,7 +30,7 @@ namespace POGContentLib.Core
             var item = GameAssets.FindItemPrefab(prefabName);
             if (item == null)
             {
-                MelonLogger.Warning($"[POGContentLib.Probe] Prefab not loaded (yet): {prefabName}");
+                MelonLogger.Warning($"[POGLib.Probe] Prefab not loaded (yet): {prefabName}");
                 return false;
             }
             ProbeGameObject(item.gameObject, prefabName);
@@ -42,7 +42,7 @@ namespace POGContentLib.Core
         {
             if (root == null) return;
             var sb = new StringBuilder();
-            sb.Append($"[POGContentLib.Probe] VISUAL REPORT for '{label}'");
+            sb.Append($"[POGLib.Probe] VISUAL REPORT for '{label}'");
 
             DescribeHierarchy(root, sb);
             DescribeLights(root, sb);

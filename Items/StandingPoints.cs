@@ -2,7 +2,7 @@ using Il2Cpp;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// A shop slot places its item so that <c>InventoryItem.m_standingTransform</c> lands on the slot's item
@@ -54,7 +54,7 @@ namespace POGContentLib.Items
                     if (!any) { b = new Bounds(p, Vector3.zero); any = true; } else b.Encapsulate(p);
                 }
             }
-            if (!any) MelonLogger.Warning($"[POGContentLib] {item.name}: no mesh to find a standing point from; using the pivot.");
+            if (!any) MelonLogger.Warning($"[POGLib] {item.name}: no mesh to find a standing point from; using the pivot.");
             return any ? new Vector3(b.center.x, b.min.y, b.center.z) : Vector3.zero;
         }
     }

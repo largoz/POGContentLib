@@ -5,11 +5,11 @@ using Il2Cpp;
 using Il2CppGame.Spawning;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
-using POGContentLib.Items;
-using POGContentLib.Shops.Model;
+using POGLib.Items;
+using POGLib.Shops.Model;
 using UnityEngine;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// Dungeon merchants from shop files ("sellers") as VARIANTS of a vanilla merchant preset.
@@ -52,7 +52,7 @@ namespace POGContentLib.Shops
                     var preset = items.Take(before).FirstOrDefault(g => g != null && g.name == s.Def.Preset);
                     if (preset == null)
                     {
-                        MelonLogger.Warning($"[POGContentLib] [Shops] merchant {s.FullId}: preset '{s.Def.Preset}' is not in {MerchantList} " +
+                        MelonLogger.Warning($"[POGLib] [Shops] merchant {s.FullId}: preset '{s.Def.Preset}' is not in {MerchantList} " +
                                             $"(it has: {string.Join(", ", items.Take(before).Where(g => g != null).Select(g => g.name).Distinct())})");
                         continue;
                     }
@@ -65,7 +65,7 @@ namespace POGContentLib.Shops
                 for (int i = 0; i < items.Count; i++) arr[i] = items[i];
                 list.PropList = arr;
                 _injected.Add(list.GetInstanceID());
-                MelonLogger.Msg($"[POGContentLib] [Shops] {MerchantList}: {before} -> {items.Count} entries ({string.Join(", ", added)}).");
+                MelonLogger.Msg($"[POGLib] [Shops] {MerchantList}: {before} -> {items.Count} entries ({string.Join(", ", added)}).");
             }
         }
 
@@ -91,7 +91,7 @@ namespace POGContentLib.Shops
                 int pick = WeightedPick.Index(options, o => o.w, rng.NextDouble());
                 variant = pick >= 0 ? options[pick].id : Vanilla;
                 _variantOf[rootKey] = variant;
-                MelonLogger.Msg($"[POGContentLib] [Shops] dungeon merchant {preset} is {(variant == Vanilla ? "the vanilla one" : variant)} " +
+                MelonLogger.Msg($"[POGLib] [Shops] dungeon merchant {preset} is {(variant == Vanilla ? "the vanilla one" : variant)} " +
                                 $"({string.Join(", ", options.Select(o => $"{o.id} {100 * o.w / total:0.#}%"))})");
             }
             if (variant == Vanilla) return null;

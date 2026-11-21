@@ -2,7 +2,7 @@ using Il2Cpp;
 using Il2CppAnimations;
 using UnityEngine;
 
-namespace POGContentLib.Shops.Dev
+namespace POGLib.Shops.Dev
 {
     /// <summary>
     /// A render-only copy of an item prefab (meshes and materials, no scripts, no NetworkObject) for the

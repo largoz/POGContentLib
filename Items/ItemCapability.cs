@@ -1,10 +1,10 @@
 using Il2Cpp;
 using Il2CppItems;
 using MelonLoader;
-using POGContentLib.Core;
+using POGLib.Core;
 using UnityEngine;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// A declarative item capability (EXPERIMENTAL, v0.2). In this game an "effect" (eat / weapon /
@@ -266,7 +266,7 @@ namespace POGContentLib.Items
             {
                 donor = FindVanillaEat(CopyFrom);
                 if (donor != null) CopySettings(donor, eat);
-                else MelonLogger.Warning($"[POGContentLib] EatCapability: CopyFrom '{CopyFrom}' unavailable; starting empty.");
+                else MelonLogger.Warning($"[POGLib] EatCapability: CopyFrom '{CopyFrom}' unavailable; starting empty.");
             }
             // ActiveItem_Eat is an ActiveItem_ReadyItem: its base fields need filling like any added one.
             ReadyItemFields.Fill(eat, item, donor);
@@ -291,7 +291,7 @@ namespace POGContentLib.Items
                     eat.m_buffValueToAdd = buffDonor.m_buffValueToAdd;
                     eat.m_buffValueToStart = buffDonor.m_buffValueToStart;
                 }
-                else MelonLogger.Warning($"[POGContentLib] EatCapability: BuffFrom '{BuffFrom}' has no buff (or is not a loaded food item).");
+                else MelonLogger.Warning($"[POGLib] EatCapability: BuffFrom '{BuffFrom}' has no buff (or is not a loaded food item).");
             }
             if (BuffValueToAdd.HasValue) eat.m_buffValueToAdd = BuffValueToAdd.Value;
             if (BuffValueToStart.HasValue) eat.m_buffValueToStart = BuffValueToStart.Value;
@@ -300,9 +300,9 @@ namespace POGContentLib.Items
         private static ActiveItem_Eat FindVanillaEat(string prefabName)
         {
             var prefab = GameAssets.FindItemPrefab(prefabName);
-            if (prefab == null) { MelonLogger.Warning($"[POGContentLib] EatCapability: no item prefab named '{prefabName}' is loaded yet."); return null; }
+            if (prefab == null) { MelonLogger.Warning($"[POGLib] EatCapability: no item prefab named '{prefabName}' is loaded yet."); return null; }
             var eat = prefab.GetComponentInChildren<ActiveItem_Eat>(true);
-            if (eat == null) MelonLogger.Warning($"[POGContentLib] EatCapability: '{prefabName}' is loaded but has no ActiveItem_Eat (not a food item).");
+            if (eat == null) MelonLogger.Warning($"[POGLib] EatCapability: '{prefabName}' is loaded but has no ActiveItem_Eat (not a food item).");
             return eat;
         }
 
@@ -485,7 +485,7 @@ namespace POGContentLib.Items
             }
             // A filter that matches nothing leaves the item looking untouched, with no clue why.
             if (filtered && lit == 0)
-                MelonLogger.Warning($"[POGContentLib] GlowCapability: no material matched '{materialFilter}' on " +
+                MelonLogger.Warning($"[POGLib] GlowCapability: no material matched '{materialFilter}' on " +
                                     $"{root.name}: nothing glows. Check the material name in the model file.");
         }
     }
@@ -555,7 +555,7 @@ namespace POGContentLib.Items
             GameObject source = ResolveSource();
             if (source == null)
             {
-                MelonLogger.Warning($"[POGContentLib] ParticleEffect '{EffectId}': no source found " +
+                MelonLogger.Warning($"[POGLib] ParticleEffect '{EffectId}': no source found " +
                                     $"(prefab='{SourcePrefabName}' child='{SourceChildName}' bundle='{BundlePath}').");
                 return;
             }

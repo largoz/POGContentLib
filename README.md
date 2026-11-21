@@ -1,4 +1,4 @@
-# POGContentLib — modular content framework for Pit of Goblin
+# POGLib — modular content framework for Pit of Goblin
 
 > **Version:** 0.1.0 (in development) · **Game:** Pit of Goblin · **Mod loader:** MelonLoader 0.7.2
 
@@ -8,7 +8,7 @@ community content packs. Targets **Unity IL2CPP + Unity Netcode for GameObjects*
 ## Architecture
 
 ```
-POGContentLib.dll
+POGLib.dll
 ├── Core/                     ← stable core (code seam: interfaces)
 │   ├── IPOGPlugin, PluginRegistry, PluginGraph   — plugin graph (Bevy-style)
 │   ├── ContentRegistry        — definitions registry, deterministic GlobalObjectIdHash
@@ -40,8 +40,8 @@ once, so systems are idempotent:
 ## Usage (for content-pack authors)
 
 ```csharp
-using POGContentLib.Core;   // LootCategory
-using POGContentLib.Items;  // Content, ModItemDefinition, LootPlacement
+using POGLib.Core;   // LootCategory
+using POGLib.Items;  // Content, ModItemDefinition, LootPlacement
 
 public override void OnInitializeMelon()
 {
@@ -71,7 +71,7 @@ public override void OnInitializeMelon()
 }
 ```
 
-> Content mods load **after** POGContentLib (it uses `[MelonPriority(-1000)]`), so calling
+> Content mods load **after** POGLib (it uses `[MelonPriority(-1000)]`), so calling
 > `Content.Items.*` from your `OnInitializeMelon` is safe. Templates build on scene load;
 > spawning/consume happen host-side.
 
@@ -99,7 +99,7 @@ tables (`DT_BonusChest_*`) casually — a removed mod then NREs on save restore;
 
 Give the item a `ShopCost`, then describe where it is sold in a `pogshop.json` next to your mod — no shop
 code. Chances are weights, so any number of mods can share a slot; you can add new slots next to any
-seller and new dungeon merchants. The in-game shop tools (preference `[POGContentLib_ShopTools] Enabled`,
+seller and new dungeon merchants. The in-game shop tools (preference `[POGLib_ShopTools] Enabled`,
 then F7 while hosting alone) place slots by aiming and write the file. Full guide: [`SHOPS.md`](SHOPS.md);
 example: `samples/ShopDemo/`.
 

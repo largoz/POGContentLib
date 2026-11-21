@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>One registered content item as seen by the parity layer: its full id + version.</summary>
     public sealed class ParityEntry
@@ -48,7 +48,7 @@ namespace POGContentLib.Core
             if (IsMatch) return "Content parity OK (matches host).";
             var sb = new StringBuilder();
             sb.Append("Content mismatch with host");
-            if (RemoteHadNoData) sb.Append(" (host advertised no parity data — vanilla or POGContentLib-less host)");
+            if (RemoteHadNoData) sb.Append(" (host advertised no parity data — vanilla or POGLib-less host)");
             sb.Append(':');
             if (Missing.Count > 0)
                 sb.Append("\n  MISSING (install/enable to join): ").Append(string.Join(", ", Missing));

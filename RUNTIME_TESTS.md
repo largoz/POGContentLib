@@ -1,4 +1,4 @@
-# POGContentLib — Runtime Test Guide (Milestone 0)
+# POGLib — Runtime Test Guide (Milestone 0)
 
 The framework is coded to statically-confirmed facts. These checks validate the runtime paths that
 **cannot** be proven without launching the game — most importantly the `ForceSamePrefabs=true`
@@ -11,11 +11,11 @@ Deployed to `Mods/` (already done by the build step):
 
 | File | Role |
 |------|------|
-| `POGContentLib.dll` | the framework (loads first, `MelonPriority(-1000)`) |
+| `POGLib.dll` | the framework (loads first, `MelonPriority(-1000)`) |
 | `POGCustomStones.dll` | reference content pack — registers `POGCustomStones:InvisibilityStone` and `POGCustomStones:TeleportStone` |
 
 Logs: **`MelonLoader/Latest.log`** (and `MelonLoader/Logs/` for older runs). Every framework line is
-prefixed `[POGContentLib]`; the pack uses `[CustomStones]`.
+prefixed `[POGLib]`; the pack uses `[CustomStones]`.
 
 Two-player tests need **two machines** (Steam is single-instance per account). Use the two PCs on the
 tailnet (`DESKTOP-RAED99F` ⇄ `danibani`); copy the same `Mods/` files to both, then vary them per test.
@@ -26,9 +26,9 @@ tailnet (`DESKTOP-RAED99F` ⇄ `danibani`); copy the same `Mods/` files to both,
 
 1. Launch the game once, reach the main menu, quit.
 2. In `Latest.log` look for:
-   - `[POGContentLib] Initializing (MelonMod)...`
-   - `[POGContentLib] Compatibility OK (N game members resolved).`
-   - `POG Custom Stones 2.0.0 loaded (on POGContentLib).`
+   - `[POGLib] Initializing (MelonMod)...`
+   - `[POGLib] Compatibility OK (N game members resolved).`
+   - `POG Custom Stones 2.0.0 loaded (on POGLib).`
 
 **PASS:** "Compatibility OK". **FAIL / ACTION:** `COMPATIBILITY: x/N ... NOT FOUND` lists the exact
 missing member — the game updated; fix that entry in `Core/GameNames.cs`. Note whether any missing
@@ -41,9 +41,9 @@ disables lobby-metadata parity (T3), not the rest.
 
 1. Host a game (single player is fine to start).
 2. On session start expect:
-   - `[POGContentLib] Registered definition: POGCustomStones:InvisibilityStone (hash=XXXXXXXX)`
-   - `[POGContentLib] Registered definition: POGCustomStones:TeleportStone (hash=XXXXXXXX)`
-   - `[POGContentLib] Network prefabs registered: 2 ok, 0 failed.`
+   - `[POGLib] Registered definition: POGCustomStones:InvisibilityStone (hash=XXXXXXXX)`
+   - `[POGLib] Registered definition: POGCustomStones:TeleportStone (hash=XXXXXXXX)`
+   - `[POGLib] Network prefabs registered: 2 ok, 0 failed.`
 
 **PASS:** `2 ok, 0 failed`. **FAIL:** `Post-verify FAILED` (prefab not in `NetworkPrefabOverrideLinks`)
 or `AddNetworkPrefab threw` — the registration window / write path is wrong; capture the full line.
@@ -77,9 +77,9 @@ detect and surface it **before** that.
 
 ### T3a — Matched (both peers have Stones)
 Host, then join. Expect on the **host**:
-`[POGContentLib] Parity advertised: 2 item(s), token=XXXXXXXX.`
+`[POGLib] Parity advertised: 2 item(s), token=XXXXXXXX.`
 and on the **client**:
-`[POGContentLib] Parity OK (token=XXXXXXXX matches host).`
+`[POGLib] Parity OK (token=XXXXXXXX matches host).`
 
 **PASS:** both lines appear and tokens match.
 **FAIL / RUNTIME-TODO:** `Parity not advertised (no lobby yet ...)` or `Parity/Steam bridge unavailable`
@@ -88,13 +88,13 @@ timing unknown. Record where in the connect flow the lobby actually becomes avai
 whether to move the hook, e.g. onto `NetworkHandler.CreateLobbyAsync` / the join path).
 
 ### T3b — Mismatched (host has Stones, client does NOT)
-Remove `POGCustomStones.dll` from the **client's** `Mods/` (keep `POGContentLib.dll`). Host with Stones,
+Remove `POGCustomStones.dll` from the **client's** `Mods/` (keep `POGLib.dll`). Host with Stones,
 client joins. Expect on the **client**:
 ```
-[POGContentLib] Content mismatch with host:
+[POGLib] Content mismatch with host:
   MISSING (install/enable to join): POGCustomStones:InvisibilityStone@1, POGCustomStones:TeleportStone@1
 ```
-(The `[POGContentLib] Content mismatch ...` warning is emitted by `RaiseMismatch` and is the proof —
+(The `[POGLib] Content mismatch ...` warning is emitted by `RaiseMismatch` and is the proof —
 `Content.Parity.OnMismatch` is raised at the same point for any subscriber, e.g. POGConfig's future UI.)
 
 **PASS:** the mismatch line lists exactly the two missing ids. Also note what the vanilla NGO layer does
@@ -126,7 +126,7 @@ cannot be read by any static tool — this captures them from a live instance so
 2. Launch the game and load into the lobby (prefabs load progressively; the probe retries on every
    scene load until each one resolves).
 3. In `Latest.log` find the block:
-   `[POGContentLib.Probe] VISUAL REPORT for 'Item_SpeakingStone'`
+   `[POGLib.Probe] VISUAL REPORT for 'Item_SpeakingStone'`
 
 It lists child objects, every `Light` (type / colour RGBA / intensity / range / shadows, plus the
 HDRP intensity and unit where present), every `LightFlicker` (strength / duration / vibrato /
@@ -150,6 +150,6 @@ This is independent of T1–T3 and can be deferred.
 
 ## Reporting back
 
-For any FAIL, the useful artifacts are: the full `[POGContentLib]` / `[CustomStones]` block from
+For any FAIL, the useful artifacts are: the full `[POGLib]` / `[CustomStones]` block from
 `Latest.log`, which test number, and (for T2/T3) both peers' logs. That pins whether the issue is
 registration timing, hash parity, or the lobby-metadata handle.

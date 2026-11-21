@@ -2,7 +2,7 @@ using HarmonyLib;
 using Il2Cpp;
 using Il2CppGame.Gameplay;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// When a content pack reskins with the SpeakingStone mesh, the donor's SpeakingStone

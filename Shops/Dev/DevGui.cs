@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace POGContentLib.Shops.Dev
+namespace POGLib.Shops.Dev
 {
     /// <summary>
     /// Minimal immediate-mode layout over GUI (not GUILayout: its params-array overloads are awkward

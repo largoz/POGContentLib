@@ -8,24 +8,24 @@ using Il2CppGame.Menu;
 using Il2CppGame.Networking;
 using Il2CppGame.Spawning;
 using MelonLoader;
-using POGContentLib.Core;
-using POGContentLib.Items;
-using POGContentLib.Shops.Model;
+using POGLib.Core;
+using POGLib.Items;
+using POGLib.Shops.Model;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace POGContentLib.Shops.Dev
+namespace POGLib.Shops.Dev
 {
     /// <summary>
     /// In-game shop tools (docs/design/shops.md §9). Turned on by the preference
-    /// [POGContentLib_ShopTools] Enabled = true; then, while you host a game alone:
+    /// [POGLib_ShopTools] Enabled = true; then, while you host a game alone:
     ///   F7  aim mode: a HUD shows the slot/seller you look at; F8 places a new slot of your mod there,
     ///       G moves the selected new slot to where you look, arrows / PageUp / PageDown nudge it (Shift: fine),
     ///       [ and ] turn it, T switches nudging between the slot and its price tag.
     ///   F9  panel (opens the game's pause for a free cursor): slots in this scene with their chances and
     ///       "who changed what", your pool entries, items to add, scene jumps, round-timer freeze, Save.
-    /// Save writes UserData/POGContentLib/Shops/&lt;mod&gt;.pogshop.json — copy it into your package as
+    /// Save writes UserData/POGLib/Shops/&lt;mod&gt;.pogshop.json — copy it into your package as
     /// pogshop.json. Changes to vanilla slots apply on the next visit of the scene; new slots from the next
     /// hosted session (their network prefabs must exist before a session starts).
     /// </summary>
@@ -63,7 +63,7 @@ namespace POGContentLib.Shops.Dev
 
         public static void Init()
         {
-            _cat = MelonPreferences.CreateCategory("POGContentLib_ShopTools", "POGContentLib shop tools");
+            _cat = MelonPreferences.CreateCategory("POGLib_ShopTools", "POGLib shop tools");
             _enabled = _cat.CreateEntry("Enabled", false, "Shop tools (dev mode)",
                 "F7 opens the in-game shop tools while you host a game alone. For mod authors.");
             _modPref = _cat.CreateEntry("Mod", "", "Mod being edited", "Mod id whose shop file the tools edit.");
@@ -99,7 +99,7 @@ namespace POGContentLib.Shops.Dev
                 if (_mode == Mode.Aim) { UpdateAim(); AimKeys(); }
                 UpdatePreviews();
             }
-            catch (Exception ex) { _status = $"error: {ex.GetType().Name}: {ex.Message}"; MelonLogger.Warning($"[POGContentLib] [ShopTools] {ex}"); }
+            catch (Exception ex) { _status = $"error: {ex.GetType().Name}: {ex.Message}"; MelonLogger.Warning($"[POGLib] [ShopTools] {ex}"); }
         }
 
         private static void SetMode(Mode m)
@@ -483,7 +483,7 @@ namespace POGContentLib.Shops.Dev
             catch (Exception ex)
             {
                 _status = $"gui error: {ex.Message}";
-                if (_guiErrors.Add(ex.GetType().Name + ex.Message)) MelonLogger.Warning($"[POGContentLib] [ShopTools] drawing failed: {ex}");
+                if (_guiErrors.Add(ex.GetType().Name + ex.Message)) MelonLogger.Warning($"[POGLib] [ShopTools] drawing failed: {ex}");
             }
         }
 
@@ -550,7 +550,7 @@ namespace POGContentLib.Shops.Dev
         {
             if (G.LabelWithButtons(Tail(_selected), "Copy") == 0)
             {
-                MelonLogger.Msg($"[POGContentLib] [ShopTools] slot id: {_selected}");
+                MelonLogger.Msg($"[POGLib] [ShopTools] slot id: {_selected}");
                 try { GUIUtility.systemCopyBuffer = _selected; _status = "slot id copied (also in the log)"; }
                 catch { _status = "slot id written to the log"; }
             }

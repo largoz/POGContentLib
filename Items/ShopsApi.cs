@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using POGContentLib.Shops;
-using POGContentLib.Shops.Model;
+using POGLib.Shops;
+using POGLib.Shops.Model;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// Shops from code (<c>Content.Shops</c>). Most mods need none of this: ship a pogshop.json and the

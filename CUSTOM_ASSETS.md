@@ -23,7 +23,7 @@ What this means in practice:
 
 So **visual effects are fine** — particles, glow, lights, trails, animation are all engine-side data,
 not scripts. You only need to move *logic* out of the bundle and into your mod's C# (a use handler or
-a capability in POGContentLib).
+a capability in POGLib).
 
 ## Building the bundle
 

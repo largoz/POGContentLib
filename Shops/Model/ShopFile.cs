@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace POGContentLib.Shops.Model
+namespace POGLib.Shops.Model
 {
     /// <summary>
     /// One shop file (pogshop.json): what a mod sells and where. Data contract, versioned by
@@ -221,7 +221,7 @@ namespace POGContentLib.Shops.Model
             void Warn(string m) => d.Add(new Diagnostic(Severity.Warning, src, m));
 
             if (f.Format == 0) Err("missing \"format\" (use 1)");
-            else if (f.Format > ShopFile.CurrentFormat) Err($"format {f.Format} is newer than this POGContentLib reads ({ShopFile.CurrentFormat}); update POGContentLib");
+            else if (f.Format > ShopFile.CurrentFormat) Err($"format {f.Format} is newer than this POGLib reads ({ShopFile.CurrentFormat}); update POGLib");
             else if (f.Format < 1) Err($"format {f.Format} is not a valid format");
             if (!ShopIds.IsValidModId(f.Mod)) Err($"\"mod\" must be your mod id (letters, digits, _ . -), got '{f.Mod}'");
             if (!ok) return false;

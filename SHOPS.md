@@ -1,6 +1,6 @@
 # Selling your items: shop files
 
-POGContentLib lets a content mod sell its items in the game's shops without writing shop code. You
+POGLib lets a content mod sell its items in the game's shops without writing shop code. You
 register the item in code (as usual, `Content.Items.Register`), then describe **where it is sold** in a
 data file, `pogshop.json`, shipped next to your mod. The in-game shop tools (below) write that file
 for you.
@@ -31,7 +31,7 @@ Each vanilla candidate counts as weight **10** (per occurrence in its pool), so 
 often as a vanilla item". `"nothing"` is a candidate too: give it a weight to make a slot sometimes
 empty.
 
-Players can change the vanilla weight: `VanillaWeight` under `[POGContentLib_Shops]` in
+Players can change the vanilla weight: `VanillaWeight` under `[POGLib_Shops]` in
 `UserData/MelonPreferences.cfg` (read on the host, from the next scene; `0` = in a slot some mod adds to, only
 the mods' items come up). Write your weights against 10 all the same.
 
@@ -117,10 +117,10 @@ The library reads:
 - `Mods/**/pogshop.json` and `Mods/**/*.pogshop.json` — ship it inside your package, e.g.
   `Mods/<Author>-<Name>/pogshop.json` (Gale keeps that path; r2modman nests the package folder; both are
   found);
-- `UserData/POGContentLib/Shops/*.json` — local files, where the shop tools save;
+- `UserData/POGLib/Shops/*.json` — local files, where the shop tools save;
 - shop files added from code: `Content.Shops.AddFile(new ShopFile { ... })`.
 
-A file with an error is refused with a log line naming the problem (`[POGContentLib] [Shops] ...`);
+A file with an error is refused with a log line naming the problem (`[POGLib] [Shops] ...`);
 unknown keys are reported as probable typos.
 
 Mistakes that leave a file valid but do nothing are logged too, once per game run, with the closest ids that
@@ -135,7 +135,7 @@ do exist:
 
 ## The shop tools (in game)
 
-For mod authors. Set `Enabled = true` under `[POGContentLib_ShopTools]` in `UserData/MelonPreferences.cfg`, host a
+For mod authors. Set `Enabled = true` under `[POGLib_ShopTools]` in `UserData/MelonPreferences.cfg`, host a
 game alone, then:
 
 | Key | Does |
@@ -148,7 +148,7 @@ game alone, then:
 | Enter | select the vanilla slot you look at |
 | F9 | panel: slots here with chances and "who changed what", weights (− + x), find and add items, jump to Lobby / InBetween / DarkBurg, freeze the round timer, Save |
 
-Save writes `UserData/POGContentLib/Shops/<mod>.pogshop.json`; copy it into your package as `pogshop.json`.
+Save writes `UserData/POGLib/Shops/<mod>.pogshop.json`; copy it into your package as `pogshop.json`.
 While that working copy exists it **replaces** your mod's packaged shop file(s) (the log says so), so the same
 slot is never loaded twice; delete it to go back to the packaged file.
 A change to a vanilla slot applies the next time the scene loads, and so does a new slot (it is a copy of the
@@ -159,6 +159,6 @@ loaded mod, so you see the real share your weight buys.
 
 The host chooses every slot's item; clients see the result through the game. **New slots** are copies of the
 game's own shop slot, so every player sees them and **only the host needs the shop files**. A player with
-POGContentLib gets the slot's price tag where the file puts it (the host tells it); a player without the library
+POGLib gets the slot's price tag where the file puts it (the host tells it); a player without the library
 sees the tag where the game's slot has it. An item from a mod a player does not have does not appear for that
 player: the slot looks empty there.

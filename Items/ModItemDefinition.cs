@@ -1,8 +1,8 @@
 using Il2Cpp;
-using POGContentLib.Core;
+using POGLib.Core;
 using UnityEngine;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>Item visual kind.</summary>
     public enum ItemVisualKind

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace POGContentLib.Shops.Model
+namespace POGLib.Shops.Model
 {
     /// <summary>
     /// The one weighted draw every shop choice goes through: a slot's item and a dungeon merchant's variant.

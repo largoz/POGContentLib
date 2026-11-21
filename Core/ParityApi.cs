@@ -1,6 +1,6 @@
 using System;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Public multiplayer-parity facade (Content.Parity). A content pack — or a UI mod like POGConfig —

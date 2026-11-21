@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Test driver for POGContentLib: copied into the Gale profile's Mods/ for one run by run.sh and
+  <!-- Test driver for POGLib: copied into the Gale profile's Mods/ for one run by run.sh and
        removed afterwards. Never ship it. It plays the game from inside (no mouse): enters a session as
        host through the game's own save-slot menu, then runs the checks a scenario asks for. -->
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <AssemblyName>POGContentLibRuntimeDriver</AssemblyName>
-    <RootNamespace>POGContentLib.RuntimeDriver</RootNamespace>
+    <AssemblyName>POGLibRuntimeDriver</AssemblyName>
+    <RootNamespace>POGLib.RuntimeDriver</RootNamespace>
     <GameDir Condition="'$(GameDir)' == ''">$(HOME)/.local/share/com.kesomannen.gale/pit-of-goblin/profiles/Default</GameDir>
     <MelonDir>$(GameDir)\MelonLoader\net6</MelonDir>
     <InteropDir>$(GameDir)\MelonLoader\Il2CppAssemblies</InteropDir>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="POGContentLib"><HintPath>../../bin/Release/net6.0/POGContentLib.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="POGLib"><HintPath>../../bin/Release/net6.0/POGLib.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="MelonLoader"><HintPath>$(MelonDir)\MelonLoader.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(MelonDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Il2CppInterop.Runtime"><HintPath>$(MelonDir)\Il2CppInterop.Runtime.dll</HintPath><Private>false</Private></Reference>

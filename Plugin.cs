@@ -3,10 +3,10 @@ using System.Linq;
 using HarmonyLib;
 using Il2CppInterop.Runtime.Injection;
 using MelonLoader;
-using POGContentLib.Core;
-using POGContentLib.Items;
+using POGLib.Core;
+using POGLib.Items;
 
-[assembly: MelonInfo(typeof(POGContentLib.Plugin), "POGContentLib", "0.1.0", "POG Community")]
+[assembly: MelonInfo(typeof(POGLib.Plugin), "POGLib", "0.1.0", "largo")]
 [assembly: MelonGame(null, "Pit of Goblin")]
 // Load earlier than content mods so their OnInitializeMelon can call Content.*.
 [assembly: MelonPriority(-1000)]
@@ -14,10 +14,10 @@ using POGContentLib.Items;
 // whole assembly too, and every prefix and postfix ran twice (CheckEachPatchOnce, 2026-11-19: 26 of 26).
 [assembly: HarmonyDontPatchAll]
 
-namespace POGContentLib
+namespace POGLib
 {
     /// <summary>
-    /// POGContentLib entry point. This is a MelonMod (NOT a MelonPlugin): working with Il2Cpp
+    /// POGLib entry point. This is a MelonMod (NOT a MelonPlugin): working with Il2Cpp
     /// types, NetworkManager and component injection is only possible after the game has
     /// initialized — i.e. in OnInitializeMelon and later events, not in loader pre-init.
     ///
@@ -31,7 +31,7 @@ namespace POGContentLib
     {
         public override void OnInitializeMelon()
         {
-            MelonLogger.Msg("[POGContentLib] Initializing (MelonMod)...");
+            MelonLogger.Msg("[POGLib] Initializing (MelonMod)...");
 
             // 1) Injected Il2Cpp types — BEFORE any AddComponent<T>.
             try
@@ -40,7 +40,7 @@ namespace POGContentLib
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[POGContentLib] ClassInjector failed: {ex.Message}");
+                MelonLogger.Error($"[POGLib] ClassInjector failed: {ex.Message}");
             }
 
             // 2) Compatibility probe — verify the game members we bind to exist on this build,
@@ -52,7 +52,7 @@ namespace POGContentLib
 
             // 4) Built-in domain plugins (each is a separate module).
             PluginRegistry.Add(new ItemsPlugin());
-            PluginRegistry.Add(new POGContentLib.Shops.ShopsPlugin());
+            PluginRegistry.Add(new POGLib.Shops.ShopsPlugin());
             // TODO(v2): PluginRegistry.Add(new MobsPlugin());
             // TODO(v3): PluginRegistry.Add(new LevelsPlugin());
 
@@ -65,10 +65,10 @@ namespace POGContentLib
             //    Isolating them means a single incompatible patch degrades that one feature only.
             PatchEachClassIndependently();
 
-            // 7) In-game shop tools (off unless [POGContentLib_ShopTools] Enabled = true).
-            POGContentLib.Shops.Dev.ShopDevTools.Init();
+            // 7) In-game shop tools (off unless [POGLib_ShopTools] Enabled = true).
+            POGLib.Shops.Dev.ShopDevTools.Init();
 
-            MelonLogger.Msg("[POGContentLib] Boot done. Waiting for scene + session.");
+            MelonLogger.Msg("[POGLib] Boot done. Waiting for scene + session.");
         }
 
         /// <summary>
@@ -95,17 +95,17 @@ namespace POGContentLib
                     var reason = new System.Text.StringBuilder();
                     for (var e = ex; e != null; e = e.InnerException)
                         reason.Append("\n    ").Append(e.GetType().Name).Append(": ").Append(e.Message);
-                    MelonLogger.Error($"[POGContentLib] Harmony patch FAILED for {type.Name}:{reason}");
+                    MelonLogger.Error($"[POGLib] Harmony patch FAILED for {type.Name}:{reason}");
                 }
             }
 
-            if (failed == 0) MelonLogger.Msg($"[POGContentLib] Harmony: {ok} patch class(es) applied.");
-            else MelonLogger.Warning($"[POGContentLib] Harmony: {ok} applied, {failed} FAILED (those features are off; the rest work).");
+            if (failed == 0) MelonLogger.Msg($"[POGLib] Harmony: {ok} patch class(es) applied.");
+            else MelonLogger.Warning($"[POGLib] Harmony: {ok} applied, {failed} FAILED (those features are off; the rest work).");
         }
 
-        public override void OnUpdate() => POGContentLib.Shops.Dev.ShopDevTools.OnUpdate();
+        public override void OnUpdate() => POGLib.Shops.Dev.ShopDevTools.OnUpdate();
 
-        public override void OnGUI() => POGContentLib.Shops.Dev.ShopDevTools.OnGUI();
+        public override void OnGUI() => POGLib.Shops.Dev.ShopDevTools.OnGUI();
 
         private bool _patchesChecked;
 
@@ -137,12 +137,12 @@ namespace POGContentLib
                     foreach (var g in mine.GroupBy(p => p.PatchMethod).Where(g => g.Count() > 1))
                     {
                         twice++;
-                        MelonLogger.Warning($"[POGContentLib] Harmony: {original.DeclaringType?.Name}.{original.Name} has {g.Key.DeclaringType?.Name}.{g.Key.Name} {g.Count()} times.");
+                        MelonLogger.Warning($"[POGLib] Harmony: {original.DeclaringType?.Name}.{original.Name} has {g.Key.DeclaringType?.Name}.{g.Key.Name} {g.Count()} times.");
                     }
                 }
-                MelonLogger.Msg($"[POGContentLib] Harmony: {methods} game method(s) patched; {(twice == 0 ? "each patch once" : $"{twice} patch(es) more than once")}.");
+                MelonLogger.Msg($"[POGLib] Harmony: {methods} game method(s) patched; {(twice == 0 ? "each patch once" : $"{twice} patch(es) more than once")}.");
             }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] Harmony: could not check the patches: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] Harmony: could not check the patches: {ex.Message}"); }
         }
     }
 }

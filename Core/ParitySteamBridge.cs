@@ -3,7 +3,7 @@ using HarmonyLib;
 using Il2CppGame.Platform;
 using MelonLoader;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Access to the current Steam lobby's metadata — the channel the parity layer uses to advertise
@@ -69,7 +69,7 @@ namespace POGContentLib.Core
         {
             if (_warned) return;
             _warned = true;
-            MelonLogger.Warning($"[POGContentLib] Parity/Steam bridge unavailable — {msg} " +
+            MelonLogger.Warning($"[POGLib] Parity/Steam bridge unavailable — {msg} " +
                 "Parity detection via lobby metadata is off this session (the game's own connect-time " +
                 "prefab check still applies).");
         }

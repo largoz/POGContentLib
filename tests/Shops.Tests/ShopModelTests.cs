@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using POGContentLib.Shops.Model;
+using POGLib.Shops.Model;
 using Xunit;
 
-namespace POGContentLib.Shops.Tests
+namespace POGLib.Shops.Tests
 {
     public class ShopFileTests
     {

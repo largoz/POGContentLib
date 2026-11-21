@@ -10,7 +10,7 @@ using Il2CppItems;
 using MelonLoader;
 using Unity.Netcode;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Load-time sanity check. IL2CPP mods break when a game update renames/removes a member the
@@ -162,12 +162,12 @@ namespace POGContentLib.Core
 
             if (miss == 0)
             {
-                MelonLogger.Msg($"[POGContentLib] Compatibility OK ({total} game members resolved).");
+                MelonLogger.Msg($"[POGLib] Compatibility OK ({total} game members resolved).");
             }
             else
             {
                 MelonLogger.Warning(
-                    $"[POGContentLib] COMPATIBILITY: {miss}/{total} expected game members NOT FOUND — the game may " +
+                    $"[POGLib] COMPATIBILITY: {miss}/{total} expected game members NOT FOUND — the game may " +
                     $"have updated. The framework may misbehave; update GameNames/bindings for this version. Missing:{missing}");
             }
         }

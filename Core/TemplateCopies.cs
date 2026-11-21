@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// The library's templates (item shells, shop slots) carry <c>HideFlags.HideAndDontSave</c> so they stay out of

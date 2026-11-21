@@ -1,7 +1,7 @@
 using System;
 using MelonLoader;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Multiplayer content-parity orchestration. Because ForceSamePrefabs=true, a client whose
@@ -32,9 +32,9 @@ namespace POGContentLib.Core
             var manifest = BuildLocalManifest();
             bool ok = ParitySteamBridge.TrySetLobbyData(GameNames.Steam.ParityMetadataKey, manifest.Serialize());
             if (ok)
-                MelonLogger.Msg($"[POGContentLib] Parity advertised: {manifest.Entries.Count} item(s), token={manifest.Token}.");
+                MelonLogger.Msg($"[POGLib] Parity advertised: {manifest.Entries.Count} item(s), token={manifest.Token}.");
             else
-                MelonLogger.Msg("[POGContentLib] Parity not advertised (no lobby yet or Steam bridge unavailable).");
+                MelonLogger.Msg("[POGLib] Parity not advertised (no lobby yet or Steam bridge unavailable).");
         }
 
         /// <summary>
@@ -52,18 +52,18 @@ namespace POGContentLib.Core
             if (raw == null)
             {
                 if (local.Entries.Count > 0)
-                    MelonLogger.Msg("[POGContentLib] Parity: could not read host manifest (no lobby/bridge). " +
+                    MelonLogger.Msg("[POGLib] Parity: could not read host manifest (no lobby/bridge). " +
                                     "Relying on the game's own connect-time prefab check.");
                 return null;
             }
 
-            // Empty string = key unset: host is on vanilla or has no POGContentLib. If we have content,
+            // Empty string = key unset: host is on vanilla or has no POGLib. If we have content,
             // the prefab sets differ → surface all our content as "extra" (host lacks it).
             if (raw.Length == 0)
             {
                 if (local.Entries.Count == 0)
                 {
-                    MelonLogger.Msg("[POGContentLib] Parity OK (no content on either side).");
+                    MelonLogger.Msg("[POGLib] Parity OK (no content on either side).");
                     return new ParityReport();
                 }
                 var noneReport = local.CompareToHost(new ParityManifest(Array.Empty<ParityEntry>()));
@@ -75,7 +75,7 @@ namespace POGContentLib.Core
             var host = ParityManifest.Deserialize(raw);
             var report = local.CompareToHost(host);
             if (report.IsMatch)
-                MelonLogger.Msg($"[POGContentLib] Parity OK (token={report.LocalToken} matches host).");
+                MelonLogger.Msg($"[POGLib] Parity OK (token={report.LocalToken} matches host).");
             else
                 RaiseMismatch(report);
             return report;
@@ -83,9 +83,9 @@ namespace POGContentLib.Core
 
         private static void RaiseMismatch(ParityReport report)
         {
-            MelonLogger.Warning($"[POGContentLib] {report.Describe()}");
+            MelonLogger.Warning($"[POGLib] {report.Describe()}");
             try { OnParityMismatch?.Invoke(report); }
-            catch (Exception ex) { MelonLogger.Error($"[POGContentLib] OnParityMismatch handler threw: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Error($"[POGLib] OnParityMismatch handler threw: {ex.Message}"); }
         }
     }
 }

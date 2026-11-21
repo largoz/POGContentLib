@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace POGContentLib.Shops.Model
+namespace POGLib.Shops.Model
 {
     /// <summary>One way an entry got into, or was changed in, a slot — the slot's "who changed what" history.</summary>
     public sealed class HistoryRecord

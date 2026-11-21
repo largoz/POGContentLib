@@ -9,18 +9,18 @@ using HarmonyLib;
 using Il2Cpp;
 using Il2CppGame.Spawning;
 using MelonLoader;
-using POGContentLib.Items;
-using POGContentLib.Shops;
+using POGLib.Items;
+using POGLib.Shops;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.RuntimeDriver
+namespace POGLib.RuntimeDriver
 {
     internal static class Checks
     {
         public const string Mod = "DriverChecks";
         public const string BreadSlot = "vanilla:PitOfGoblin_Lobby/StarterShop/Game.Spawning.ShopLocation Item_Bread";
-        public const string PrefCategory = "POGContentLib_Shops", PrefWeight = "VanillaWeight";
+        public const string PrefCategory = "POGLib_Shops", PrefWeight = "VanillaWeight";
 
         static int _pass, _fail;
         public static bool Enabled;
@@ -63,7 +63,7 @@ namespace POGContentLib.RuntimeDriver
         /// <summary>In the hub, after the slots spawned: what the setting and the rules did to the bread slot.</summary>
         public static void HubChecks()
         {
-            var records = POGContentLib.Items.Content.Shops.Slots;
+            var records = POGLib.Items.Content.Shops.Slots;
             if (!records.TryGetValue(BreadSlot, out var rec)) { Check("bread slot stocked", false, "no record for " + BreadSlot); return; }
             var vanilla = rec.Resolved.Entries.Where(e => e.AddedBy == "vanilla").ToList();
             Check("vanilla weight setting reached the pick", vanilla.Count > 0 && vanilla.All(e => e.Weight == 0),
@@ -88,7 +88,7 @@ namespace POGContentLib.RuntimeDriver
         }
 
         /// <summary>In the dungeon: the mod merchant variant came up and its slots hold what the library chose.</summary>
-        public static void MerchantChecks(System.Collections.Generic.List<POGContentLib.Shops.SlotRecord> merchantSlots)
+        public static void MerchantChecks(System.Collections.Generic.List<POGLib.Shops.SlotRecord> merchantSlots)
         {
             Check("a mod merchant came up", merchantSlots.Count > 0,
                   merchantSlots.Count > 0 ? string.Join(", ", merchantSlots.Select(r => r.SlotId)) : "no slot of a mod merchant in this dungeon (weight 100 of ~110: unlikely)");

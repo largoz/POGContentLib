@@ -3,7 +3,7 @@ using HarmonyLib;
 using MelonLoader;
 using Unity.Netcode;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>Which side of the session is starting (drives the parity step).</summary>
     internal enum SessionRole { Host, Client }
@@ -34,7 +34,7 @@ namespace POGContentLib.Core
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib] Parity step failed ({role}): {ex.Message}");
+                MelonLogger.Warning($"[POGLib] Parity step failed ({role}): {ex.Message}");
             }
         }
 
@@ -49,7 +49,7 @@ namespace POGContentLib.Core
             int id = list.GetInstanceID();
             if (id == _dispatchedList) return;
             _dispatchedList = id;
-            MelonLogger.Msg($"[POGContentLib] The game's network prefab list is loaded ({list.List?.Count} entries).");
+            MelonLogger.Msg($"[POGLib] The game's network prefab list is loaded ({list.List?.Count} entries).");
             PluginRegistry.Dispatch(PluginStage.GamePrefabsLoaded);
         }
 
@@ -73,7 +73,7 @@ namespace POGContentLib.Core
     internal static class Patch_StartHost
     {
         static void Prefix() => NetworkLifecycleHooks.OnBeforeSessionStart(SessionRole.Host);
-        static void Postfix() { try { NetworkLifecycleHooks.OnSessionStarted(); } catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] After StartHost: {ex.Message}"); } }
+        static void Postfix() { try { NetworkLifecycleHooks.OnSessionStarted(); } catch (Exception ex) { MelonLogger.Warning($"[POGLib] After StartHost: {ex.Message}"); } }
     }
 
     [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.StartServer))]
@@ -86,7 +86,7 @@ namespace POGContentLib.Core
     internal static class Patch_StartClient
     {
         static void Prefix() => NetworkLifecycleHooks.OnBeforeSessionStart(SessionRole.Client);
-        static void Postfix() { try { NetworkLifecycleHooks.OnSessionStarted(); } catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] After StartClient: {ex.Message}"); } }
+        static void Postfix() { try { NetworkLifecycleHooks.OnSessionStarted(); } catch (Exception ex) { MelonLogger.Warning($"[POGLib] After StartClient: {ex.Message}"); } }
     }
 
     [HarmonyPatch(typeof(Il2CppGame.Networking.NetworkHandler), nameof(Il2CppGame.Networking.NetworkHandler.EnsureNetworkPrefabsRegistered))]
@@ -95,7 +95,7 @@ namespace POGContentLib.Core
         static void Postfix()
         {
             try { NetworkLifecycleHooks.OnGamePrefabsLoaded(); }
-            catch (Exception ex) { MelonLogger.Error($"[POGContentLib] GamePrefabsLoaded failed: {ex}"); }
+            catch (Exception ex) { MelonLogger.Error($"[POGLib] GamePrefabsLoaded failed: {ex}"); }
         }
     }
 

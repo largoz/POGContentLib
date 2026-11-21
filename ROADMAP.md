@@ -1,4 +1,7 @@
-# POGContentLib — Roadmap
+# POGLib — Roadmap
+
+**Renamed from POGContentLib on 2026-11-21** (the user's choice, the `<Game>Lib` name
+other games use: LethalLib, REPOLib). The dated records below keep the old name, as the logs of their runs do.
 
 Modular community content framework for **Pit of Goblin** (Unity IL2CPP, MelonLoader 0.7.2,
 Unity Netcode for GameObjects). One package, modular inside: a stable `Core` plus per-domain
@@ -33,29 +36,42 @@ option goes first if it can be loosened later without breaking published mods.
 ### Phase 0. Decisions (no code)
 
 - [x] 0.1 Review LethalLib (the task in "Design review" below) and write the findings there. *(2026-11-19)*
-- [ ] 0.2 Put the three design questions to the user again, with the findings, and write the answers there. If the
-      user still has no preference, propose the strict options and get a yes; do not decide for the user.
-- [ ] 0.3 A fourth question, new: **may a mod add to vanilla slots in the first release at all?** Recommended: no.
+- [x] 0.2 Put the three design questions to the user again, with the findings, and write the answers there.
+      **Answered 2026-11-19** (after the LethalLib review): a mod may not change another mod's entries, slots are
+      private, no `patch` for mods; Shops is a mod of its own and the core decides nothing about balance; the
+      host's last word on chances comes with vanilla slots, after the first release (0.3).
+- [x] 0.3 A fourth question, new: **may a mod add to vanilla slots in the first release at all?** **The user:
+      not in the first release (2026-11-19).** Recommended: no.
       The first release then has items and a mod's own slots at a seller, nothing vanilla is displaced, and what a
       weight means against vanilla content (1.1) does not have to be frozen yet; `add` into vanilla slots comes in
       a later version with the vanilla floor. Adding it later breaks nobody.
-- [ ] 0.4 Names that cannot change later: the Thunderstore package name or names, the author shown in `MelonInfo`
-      (today "POG Community"), the version the first release carries.
+- [~] 0.4 Names that cannot change later. Decided: the author in `MelonInfo` is "largo" (as in the user's other
+      mods), the first release is 0.1.0 (2026-11-19); **the core is POGLib** (2026-11-21, the user: "rename
+      everything to POGLib", the `<Game>Lib` name of LethalLib and REPOLib): the package, the DLL `POGLib.dll`, the
+      namespace `POGLib`, the name in the log, the settings categories (`POGLib_Shops`) and `UserData/POGLib`. Done
+      in code the same day; nothing of it was released, so nothing broke. **Open:** the names of the Shops and tools
+      packages (proposed in the same style: POGShops, POGShopTools). The GitHub repository is `largoz/POGLib` since
+      2026-11-21 (renamed on the user's word; the old address redirects).
 
 Done when: the answers and the names are written in this file.
 
 ### Phase 1. What freezes at release
 
-- [ ] 1.1 What a weight means against vanilla content: the vanilla floor in place of `VanillaWeight`, in the model
-      with unit tests, then one run. Only if 0.3 keeps `add` in the first release; otherwise after it.
-- [ ] 1.2 The shop file, format 1, final: what a mod may write (`slots`, and `add` / `patch` / `requires` per the
-      decisions), private slots, an exact error for what is not allowed.
+- [ ] 1.1 What a weight means against vanilla content: the vanilla floor in place of `VanillaWeight`. *(Moved after
+      the first release by the answer to 0.3; it stays here only as a reminder that it is a one-way door then.)*
+- [ ] 1.2 The shop file, format 1, final. By the answers: a mod's file may define `slots` (with its own pool
+      inside each); `add`, `patch` and `requires` are not for mods in 0.1 and get an exact error. To settle here:
+      whether the host's own file (`UserData/POGLib/Shops`) may still `add` to vanilla slots, which would
+      keep that code path and its tests alive without promising it to mods.
 - [ ] 1.3 R5: slot and seller ids that survive a game update (seller flag + index, the path as a fallback).
 - [ ] 1.4 R4: a new slot at a seller as the main path. A slot needs coordinates, and today they come from the
       in-game tools: either the library places a slot by itself next to the seller's own, or the tools ship (1.5).
       Try the first; decide then.
-- [ ] 1.5 R3: the shop tools out of the library, into a mod of their own on the public API. A human has never used
-      them: the user tries them once before they are documented.
+- [ ] 1.5 R3: the shop tools out of the library, into a mod of their own on the public API. **The user, 2026-11-20:
+      a separate mod** (only mod authors need them; today 630 lines ship to every player). Packages then: the core,
+      Shops on it, the tools on Shops; content mods on the core, and on Shops when they have a shop file. Nothing
+      depends on the tools, so they can be released later than Shops, unless 1.4 leaves them the only way to get
+      a slot's coordinates. A human has never used them: the user tries them once before they are documented.
 - [ ] 1.6 The package boundary (question 3): Shops as a mod of its own, the core without balance decisions. It
       needs the same public API as 1.5.
 - [ ] 1.7 The C# surface: what a pack calls (`Content.Items.Register`, `ModItemDefinition`, the capabilities) is
@@ -105,6 +121,9 @@ Done when: every feature the README promises has its run.
       removed.
 - [ ] 3.4 Publish on the user's word: the library, the Shops mod, then one pack built on them (POGCustomItems or
       the stones), so the store shows something that works. Check the store pages through the API afterwards.
+- [ ] 3.5 **POG Mod Check 0.1.2 before the library**: the published 0.1.1 finds the library by the old name
+      (`POGContentLib`), so with POGLib it would not mark content mods as required by itself. The code knows POGLib
+      since 2026-11-21 (not released).
 
 Done when: a clean profile holding only Thunderstore packages shows a mod item in a shop to a host and a client.
 
@@ -225,7 +244,7 @@ the PC's test changes after each session.
       Also to decide with it: D12 (price tags over empty slots for a client without the mod), and shop files
       without a DLL (they add slots, so they are network content, but there is no melon to list).
 
-## Design review 2026-11-19: what the library decides for mod authors (open: the user has not decided)
+## Design review 2026-11-19: what the library decides for mod authors (answered 2026-11-19, see Phase 0)
 
 The user's doubt: the library decides things for the mod author and can change the balance of the whole game; with
 many content mods it becomes a war for slots and weights; one mod can rewrite another's weights through the library;

@@ -5,7 +5,7 @@ using MelonLoader;
 using Unity.Collections;
 using Unity.Netcode;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Host ⇄ client messages over NGO's CustomMessagingManager (named messages), because new RPCs are impossible
@@ -16,7 +16,7 @@ namespace POGContentLib.Core
     /// </summary>
     public class HostBridge
     {
-        public const string MessageName = "POGContentLib.HostBridge";
+        public const string MessageName = "POGLib.HostBridge";
         private const int MaxText = 64 * 1024;
         private readonly Dictionary<string, Action<ulong, string>> _handlers = new();
         private CustomMessagingManager _registeredOn;
@@ -37,11 +37,11 @@ namespace POGContentLib.Core
                 if (_handler == null) { Action<ulong, FastBufferReader> h = OnMessage; _handler = h; }
                 cmm.RegisterNamedMessageHandler(MessageName, _handler);
                 _registeredOn = cmm;
-                MelonLogger.Msg("[POGContentLib] HostBridge hooked.");
+                MelonLogger.Msg("[POGLib] HostBridge hooked.");
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib] HostBridge could not register its message: {ex.Message}");
+                MelonLogger.Warning($"[POGLib] HostBridge could not register its message: {ex.Message}");
             }
         }
 
@@ -105,11 +105,11 @@ namespace POGContentLib.Core
             {
                 action = Read(reader);
                 string payload = action == null ? null : Read(reader);
-                if (action == null || payload == null) { MelonLogger.Warning($"[POGContentLib] HostBridge: an unreadable message from {senderId}."); return; }
+                if (action == null || payload == null) { MelonLogger.Warning($"[POGLib] HostBridge: an unreadable message from {senderId}."); return; }
                 if (_handlers.TryGetValue(action, out var handler)) handler(senderId, payload);
-                else MelonLogger.Warning($"[POGContentLib] HostBridge: no handler for '{action}'.");
+                else MelonLogger.Warning($"[POGLib] HostBridge: no handler for '{action}'.");
             }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] HostBridge '{action}' from {senderId}: {ex.GetType().Name}: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] HostBridge '{action}' from {senderId}: {ex.GetType().Name}: {ex.Message}"); }
         }
     }
 }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Diagnostics facade (Content.Diagnostics). Prefab-serialized visual data (light colour and
@@ -76,12 +76,12 @@ namespace POGContentLib.Core
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib.Probe] ListVfx failed: {ex.Message}");
+                MelonLogger.Warning($"[POGLib.Probe] ListVfx failed: {ex.Message}");
                 return found;
             }
 
             var sb = new System.Text.StringBuilder(
-                $"[POGContentLib.Probe] VFX matching '{filter}' ({found.Count}) — use as ParticleEffect.FromGameObject(id, ROOT, CHILD):");
+                $"[POGLib.Probe] VFX matching '{filter}' ({found.Count}) — use as ParticleEffect.FromGameObject(id, ROOT, CHILD):");
             foreach (var f in found) sb.Append("\n    ").Append(f);
             MelonLogger.Msg(sb.ToString());
             return found;
@@ -102,7 +102,7 @@ namespace POGContentLib.Core
                     if (hits.Count > 0) _vfxFilters.Remove(filter);
                 }
                 if (_vfxAttempts == MaxVfxAttempts && _vfxFilters.Count > 0)
-                    MelonLogger.Msg($"[POGContentLib.Probe] No VFX matched: {string.Join(", ", _vfxFilters)} " +
+                    MelonLogger.Msg($"[POGLib.Probe] No VFX matched: {string.Join(", ", _vfxFilters)} " +
                                     "(try a shorter filter, or an empty 'vfx:' to list everything).");
             }
 
@@ -134,11 +134,11 @@ namespace POGContentLib.Core
                     }
                     if (!_done.Contains(line)) _pending.Add(line);
                 }
-                MelonLogger.Msg($"[POGContentLib.Probe] Probe list loaded from {ProbeListFile} ({_pending.Count} entry/entries).");
+                MelonLogger.Msg($"[POGLib.Probe] Probe list loaded from {ProbeListFile} ({_pending.Count} entry/entries).");
             }
             catch (System.Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib.Probe] Could not read {ProbeListFile}: {ex.Message}");
+                MelonLogger.Warning($"[POGLib.Probe] Could not read {ProbeListFile}: {ex.Message}");
             }
         }
     }

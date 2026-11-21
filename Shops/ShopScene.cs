@@ -3,12 +3,12 @@ using System.Linq;
 using Il2Cpp;
 using Il2CppInventory;
 using Il2CppGame.Spawning;
-using POGContentLib.Core;
-using POGContentLib.Shops.Model;
+using POGLib.Core;
+using POGLib.Shops.Model;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// How shop things in a loaded scene are named and found (docs/design/shops.md §6, §12.6).
@@ -74,7 +74,7 @@ namespace POGContentLib.Shops
         }
 
         /// <summary>Our own templates live under inactive holders; they are not part of any scene's shops.</summary>
-        public static bool IsTemplate(Transform t) => t != null && t.root != null && t.root.name.StartsWith("POGContentLib_");
+        public static bool IsTemplate(Transform t) => t != null && t.root != null && t.root.name.StartsWith("POGLib_");
 
         public static IEnumerable<ShopLocation> SlotsInLoadedScenes() =>
             Object.FindObjectsOfType<ShopLocation>(true).Where(s => s != null && !IsTemplate(s.transform));

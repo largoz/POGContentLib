@@ -6,12 +6,12 @@ using Il2CppGame.Gameplay;
 using Il2CppGame.Spawning;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
-using POGContentLib.Shops.Model;
+using POGLib.Shops.Model;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>What happened to one slot this session (read by the dev tools and the logs).</summary>
     public sealed class SlotRecord
@@ -120,7 +120,7 @@ namespace POGContentLib.Shops
             memo.Prefab = chosenPrefab;
             if (chosenPrefab == null) { MakeEmpty(slot, rec); return; }
             ApplyChoice(slot, chosenPrefab);
-            MelonLogger.Msg($"[POGContentLib] [Shops] {id}: {chosen.Item} ({100 * resolved.ChanceAmong(chosen, usable):0.#}% of {resolved.Entries.Count(e => usable(e) && WeightedPick.Usable(e.Weight))} candidate(s))");
+            MelonLogger.Msg($"[POGLib] [Shops] {id}: {chosen.Item} ({100 * resolved.ChanceAmong(chosen, usable):0.#}% of {resolved.Entries.Count(e => usable(e) && WeightedPick.Usable(e.Weight))} candidate(s))");
         }
 
         private static void MakeEmpty(ShopLocation slot, SlotRecord rec)
@@ -128,7 +128,7 @@ namespace POGContentLib.Shops
             // The price tag would still show the last price, so hide it.
             ApplyChoice(slot, null);
             ShopEmptySlots.Mark(slot);
-            MelonLogger.Msg($"[POGContentLib] [Shops] {rec.SlotId}: stays empty");
+            MelonLogger.Msg($"[POGLib] [Shops] {rec.SlotId}: stays empty");
         }
 
         /// <summary>
@@ -181,10 +181,10 @@ namespace POGContentLib.Shops
                 catch (Exception ex)
                 {
                     failed++;
-                    MelonLogger.Error($"[POGContentLib] [Shops] slot {ms.FullId} failed: {ex.GetType().Name}: {ex.Message}");
+                    MelonLogger.Error($"[POGLib] [Shops] slot {ms.FullId} failed: {ex.GetType().Name}: {ex.Message}");
                 }
             }
-            MelonLogger.Msg($"[POGContentLib] [Shops] {scene}: placed {ok} mod slot(s){(failed > 0 ? $", {failed} failed" : "")}.");
+            MelonLogger.Msg($"[POGLib] [Shops] {scene}: placed {ok} mod slot(s){(failed > 0 ? $", {failed} failed" : "")}.");
         }
 
         private static bool SpawnOne(ShopCatalog.ModSlot ms)
@@ -193,18 +193,18 @@ namespace POGContentLib.Shops
             if (ShopScene.FindSlot(ms.FullId) != null) return true;   // already spawned this scene visit
             var template = SlotTemplates.Get(ms.FullId);
             if (template == null) { SlotTemplates.BuildPending(Catalog); template = SlotTemplates.Get(ms.FullId); }
-            if (template == null) { MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: no template (the game's slot prefab is not in memory)"); return false; }
+            if (template == null) { MelonLogger.Warning($"[POGLib] [Shops] slot {ms.FullId}: no template (the game's slot prefab is not in memory)"); return false; }
             // The copy keeps the game's slot prefab's network hash: only a hash the game registered reaches clients.
             uint hash = template.GetComponent<NetworkObject>().GlobalObjectIdHash;
             var links = NetworkManager.Singleton?.NetworkConfig?.Prefabs?.NetworkPrefabOverrideLinks;
-            if (links != null && !links.ContainsKey(hash)) { MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: the game's slot prefab ({hash}) is not a registered network prefab on this build; not placed"); return false; }
+            if (links != null && !links.ContainsKey(hash)) { MelonLogger.Warning($"[POGLib] [Shops] slot {ms.FullId}: the game's slot prefab ({hash}) is not a registered network prefab on this build; not placed"); return false; }
 
             string anchorId = string.IsNullOrEmpty(def.Anchor) ? def.Seller : def.Anchor;
             var anchor = ShopScene.FindAnchor(anchorId);
-            if (anchor == null) { MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: anchor '{anchorId}' is not in scene {def.Scene}"); return false; }
+            if (anchor == null) { MelonLogger.Warning($"[POGLib] [Shops] slot {ms.FullId}: anchor '{anchorId}' is not in scene {def.Scene}"); return false; }
             NpcSpawner seller = string.IsNullOrEmpty(def.Seller) ? null : ShopScene.FindSeller(def.Seller);
             if (!string.IsNullOrEmpty(def.Seller) && seller == null)
-                MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: seller '{def.Seller}' not found; placed without a seller");
+                MelonLogger.Warning($"[POGLib] [Shops] slot {ms.FullId}: seller '{def.Seller}' not found; placed without a seller");
 
             var go = UnityEngine.Object.Instantiate(template.gameObject);
             go.name = ShopScene.ModSlotPrefix + ms.FullId;
@@ -222,11 +222,11 @@ namespace POGContentLib.Shops
                 AppendToSeller(seller, slot);
             }
             else if (!string.IsNullOrEmpty(def.Faction) && !Enum.TryParse(def.Faction, out faction))
-                MelonLogger.Warning($"[POGContentLib] [Shops] slot {ms.FullId}: unknown faction '{def.Faction}' (use {string.Join(", ", Enum.GetNames(typeof(Faction)))})");
+                MelonLogger.Warning($"[POGLib] [Shops] slot {ms.FullId}: unknown faction '{def.Faction}' (use {string.Join(", ", Enum.GetNames(typeof(Faction)))})");
 
             go.GetComponent<NetworkObject>().Spawn(true);   // OnNetworkSpawn → OnSlotSpawning makes the choice
             if (faction != Faction.None && slot.m_shopFaction != null) slot.m_shopFaction.Value = faction;
-            MelonLogger.Msg($"[POGContentLib] [Shops] placed {ms.FullId} at {pos:F2} next to {anchor.name}{(seller != null ? $", sold by {ShopScene.SellerId(seller)} ({faction})" : "")}");
+            MelonLogger.Msg($"[POGLib] [Shops] placed {ms.FullId} at {pos:F2} next to {anchor.name}{(seller != null ? $", sold by {ShopScene.SellerId(seller)} ({faction})" : "")}");
             MelonCoroutines.Start(StockIfMissed(slot, ms.FullId));
             return true;
         }
@@ -250,7 +250,7 @@ namespace POGContentLib.Shops
             yield return new WaitForSeconds(1f);
             if (slot == null || !IsHost || slot.CurrentShopItem != null) yield break;
             slot.StartCoroutine(slot.CreateShopItems());
-            MelonLogger.Msg($"[POGContentLib] [Shops] {id}: stocked by the library (placed after the scene's own slots were stocked).");
+            MelonLogger.Msg($"[POGLib] [Shops] {id}: stocked by the library (placed after the scene's own slots were stocked).");
         }
 
         private static void AppendToSeller(NpcSpawner seller, ShopLocation slot)

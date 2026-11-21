@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace POGContentLib.Shops.Model
+namespace POGLib.Shops.Model
 {
     /// <summary>
     /// Identifiers used by shop files. Everything is "owner:local":

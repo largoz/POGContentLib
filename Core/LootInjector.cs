@@ -6,7 +6,7 @@ using Il2CppInventory;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>Loot table category (an array in Il2Cpp.LootTable).</summary>
     public enum LootCategory { Treasure, Food, Useful, Big, Shop }
@@ -103,7 +103,7 @@ namespace POGContentLib.Core
             }
 
             if (injected > 0)
-                MelonLogger.Msg($"[POGContentLib] Loot injected into {injected} table(s).");
+                MelonLogger.Msg($"[POGLib] Loot injected into {injected} table(s).");
         }
 
         private static long Key(int instanceId, uint hash) => ((long)instanceId << 32) ^ hash;
@@ -127,7 +127,7 @@ namespace POGContentLib.Core
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib] LootTable append failed ({table.name}/{cat}): {ex.Message}");
+                MelonLogger.Warning($"[POGLib] LootTable append failed ({table.name}/{cat}): {ex.Message}");
                 return false;
             }
         }
@@ -154,7 +154,7 @@ namespace POGContentLib.Core
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib] InventoryLootTable append failed ({table.name}): {ex.Message}");
+                MelonLogger.Warning($"[POGLib] InventoryLootTable append failed ({table.name}): {ex.Message}");
                 return false;
             }
         }

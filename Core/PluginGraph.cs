@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MelonLoader;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Graph of plugin systems and resources (Bevy-style App/World).
@@ -57,7 +57,7 @@ namespace POGContentLib.Core
                 try { sys.Run(); }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[POGContentLib] {sys.Owner} threw in stage {stage}: {ex}");
+                    MelonLogger.Error($"[POGLib] {sys.Owner} threw in stage {stage}: {ex}");
                 }
             }
         }

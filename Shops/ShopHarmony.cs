@@ -4,7 +4,7 @@ using HarmonyLib;
 using Il2CppGame.Spawning;
 using MelonLoader;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// The one hook the shop rules need: right before a slot spawns on the network (where the game decides
@@ -17,19 +17,19 @@ namespace POGContentLib.Shops
         static void Prefix(ShopLocation __instance)
         {
             try { ShopRuntime.OnSlotSpawning(__instance); }
-            catch (Exception ex) { MelonLogger.Error($"[POGContentLib] [Shops] stocking failed, the game's own choice stays: {ex}"); }
+            catch (Exception ex) { MelonLogger.Error($"[POGLib] [Shops] stocking failed, the game's own choice stays: {ex}"); }
         }
 
         static void Postfix(ShopLocation __instance)
         {
             // A mod slot spawned from our template: an ordinary scene object from here on (see TemplateCopies).
-            try { if (__instance != null && __instance.gameObject.name.StartsWith(ShopScene.ModSlotPrefix)) POGContentLib.Core.TemplateCopies.Release(__instance.gameObject); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
+            try { if (__instance != null && __instance.gameObject.name.StartsWith(ShopScene.ModSlotPrefix)) POGLib.Core.TemplateCopies.Release(__instance.gameObject); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
             try { ShopEmptySlots.HideTagIfEmpty(__instance); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] [Shops] {ex.GetType().Name}: {ex.Message}"); }
             // A client asks the host what a runtime copy of the game's slot prefab is (R1).
             try { SlotSync.OnClientSlotSpawned(__instance); }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] asking the host about a slot: {ex.GetType().Name}: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] [Shops] asking the host about a slot: {ex.GetType().Name}: {ex.Message}"); }
         }
     }
 
@@ -57,7 +57,7 @@ namespace POGContentLib.Shops
                 if (slot == null) return;
                 ShopItemPose.StandUpright(slot, __instance.GetComponent<Il2Cpp.InventoryItem>());
             }
-            catch (Exception ex) { MelonLogger.Warning($"[POGContentLib] [Shops] standing an item upright: {ex.GetType().Name}: {ex.Message}"); }
+            catch (Exception ex) { MelonLogger.Warning($"[POGLib] [Shops] standing an item upright: {ex.GetType().Name}: {ex.Message}"); }
         }
     }
 
@@ -70,7 +70,7 @@ namespace POGContentLib.Shops
         public static void StandUpright(ShopLocation slot, Il2Cpp.InventoryItem item)
         {
             if (slot == null || item == null) return;
-            var items = POGContentLib.Items.ItemsPlugin.Instance;
+            var items = POGLib.Items.ItemsPlugin.Instance;
             if (items == null || !items.IsModItem(item)) return;
 
             var t = item.transform;
@@ -79,7 +79,7 @@ namespace POGContentLib.Shops
             bool first = _logged.Add(key);
             if (tilt <= TiltToleranceDegrees)
             {
-                if (first) MelonLogger.Msg($"[POGContentLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': upright already (tilt {tilt:0}°).");
+                if (first) MelonLogger.Msg($"[POGLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': upright already (tilt {tilt:0}°).");
                 return;
             }
 
@@ -96,7 +96,7 @@ namespace POGContentLib.Shops
             if (stand != null) t.position += pivot - stand.position;
 
             if (first)
-                MelonLogger.Msg($"[POGContentLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': stood upright (the slot tilted it {tilt:0}°).");
+                MelonLogger.Msg($"[POGLib] [Shops] {item.m_itemID} in '{slot.gameObject.name}': stood upright (the slot tilted it {tilt:0}°).");
         }
     }
 
@@ -118,7 +118,7 @@ namespace POGContentLib.Shops
     }
 }
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// The host's choice per slot, handed to the game's own pipeline (2026-11-14 build, read from traces of the
@@ -158,7 +158,7 @@ namespace POGContentLib.Shops
             try { _standIn = Il2CppGame.Networking.NetworkHandler.Singleton?.m_persistentPlayer?.AssetGUID; }
             catch { _standIn = null; }
             if (string.IsNullOrEmpty(_standIn))
-                MelonLoader.MelonLogger.Warning("[POGContentLib] [Shops] no stand-in reference for slots without one; their choice may not reach the game.");
+                MelonLoader.MelonLogger.Warning("[POGLib] [Shops] no stand-in reference for slots without one; their choice may not reach the game.");
             return _standIn;
         }
 

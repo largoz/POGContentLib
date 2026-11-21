@@ -5,7 +5,7 @@ using System.Text;
 using MelonLoader;
 using Unity.Netcode;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>Base contract for any content definition (item, mob, level…).</summary>
     public interface IContentDefinition
@@ -53,19 +53,19 @@ namespace POGContentLib.Core
         {
             if (def == null || string.IsNullOrEmpty(def.ModId) || string.IsNullOrEmpty(def.ContentId))
             {
-                MelonLogger.Error("[POGContentLib] Invalid content definition (empty ModId/ContentId).");
+                MelonLogger.Error("[POGLib] Invalid content definition (empty ModId/ContentId).");
                 return false;
             }
             string full = FullId(def.ModId, def.ContentId);
             if (_defsByFullId.ContainsKey(full))
             {
-                MelonLogger.Warning($"[POGContentLib] Duplicate content id ignored: {full}");
+                MelonLogger.Warning($"[POGLib] Duplicate content id ignored: {full}");
                 return false;
             }
             uint hash = ComputeHash(def.ModId, def.ContentId);
             _defsByFullId[full] = def;
             _defsByHash[hash] = def;
-            MelonLogger.Msg($"[POGContentLib] Registered definition: {full} (hash={hash:X8})");
+            MelonLogger.Msg($"[POGLib] Registered definition: {full} (hash={hash:X8})");
             return true;
         }
 

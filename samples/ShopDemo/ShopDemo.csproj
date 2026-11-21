@@ -11,7 +11,7 @@
     <InteropDir>$(GameDir)\MelonLoader\Il2CppAssemblies</InteropDir>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="POGContentLib"><HintPath>../../bin/Release/net6.0/POGContentLib.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="POGLib"><HintPath>../../bin/Release/net6.0/POGLib.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="MelonLoader"><HintPath>$(MelonDir)\MelonLoader.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Il2CppInterop.Runtime"><HintPath>$(MelonDir)\Il2CppInterop.Runtime.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Il2Cppmscorlib"><HintPath>$(InteropDir)\Il2Cppmscorlib.dll</HintPath><Private>false</Private></Reference>

@@ -5,7 +5,7 @@ using MelonLoader;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.ResourceLocations;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Read-only lookups in the game's Addressables catalog (2026-11-14 build). An address is the asset path, e.g.
@@ -45,7 +45,7 @@ namespace POGContentLib.Core
             try { return r == null ? null : NameOf(AddressOf(r.AssetGUID)); }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib] address lookup failed: {ex.GetType().Name}: {ex.Message}");
+                MelonLogger.Warning($"[POGLib] address lookup failed: {ex.GetType().Name}: {ex.Message}");
                 return null;
             }
         }

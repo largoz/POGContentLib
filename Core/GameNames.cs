@@ -1,4 +1,4 @@
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Single source of truth for every GAME-FACING string literal the framework binds to —

@@ -2,7 +2,7 @@ using Il2Cpp;
 using MelonLoader;
 using Unity.Netcode;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Static holder for shared core services. Required because the Harmony patches
@@ -32,7 +32,7 @@ namespace POGContentLib.Core
             Bridge = new HostBridge();
             Loot = new LootInjector(Content);
 
-            MelonLogger.Msg("[POGContentLib] Core services initialized.");
+            MelonLogger.Msg("[POGLib] Core services initialized.");
         }
 
         public static bool Ready => _init;

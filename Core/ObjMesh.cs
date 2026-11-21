@@ -6,7 +6,7 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MelonLoader;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Builds a Unity <see cref="Mesh"/> from a Wavefront OBJ file at runtime — a custom model with no
@@ -102,7 +102,7 @@ namespace POGContentLib.Core
 
             if (!File.Exists(objPath))
             {
-                MelonLogger.Error($"[POGContentLib] OBJ not found: {objPath}");
+                MelonLogger.Error($"[POGLib] OBJ not found: {objPath}");
                 return null;
             }
 
@@ -114,7 +114,7 @@ namespace POGContentLib.Core
             }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[POGContentLib] OBJ load failed for {objPath}: {ex}");
+                MelonLogger.Error($"[POGLib] OBJ load failed for {objPath}: {ex}");
                 return null;
             }
         }
@@ -192,7 +192,7 @@ namespace POGContentLib.Core
 
             if (outPos.Count == 0)
             {
-                MelonLogger.Error($"[POGContentLib] OBJ has no geometry: {objPath}");
+                MelonLogger.Error($"[POGLib] OBJ has no geometry: {objPath}");
                 return null;
             }
 
@@ -243,7 +243,7 @@ namespace POGContentLib.Core
 
             var shader = Shader.Find(GameNames.Shader.HdrpLit);
             if (shader == null)
-                MelonLogger.Warning($"[POGContentLib] '{GameNames.Shader.HdrpLit}' not found — OBJ materials will be untextured defaults.");
+                MelonLogger.Warning($"[POGLib] '{GameNames.Shader.HdrpLit}' not found — OBJ materials will be untextured defaults.");
 
             var materials = new Il2CppReferenceArray<Material>(groups.Count);
             var names = new string[groups.Count];
@@ -275,7 +275,7 @@ namespace POGContentLib.Core
 
             int triCount = 0;
             foreach (var g in groups) triCount += g.Value.Count / 3;
-            var summary = $"[POGContentLib] OBJ loaded '{mesh.name}': {outPos.Count} verts, {triCount} tris, " +
+            var summary = $"[POGLib] OBJ loaded '{mesh.name}': {outPos.Count} verts, {triCount} tris, " +
                           $"{groups.Count} submesh(es) [{string.Join(", ", names)}]";
             if (collisionMeshes.Count > 0)
             {
@@ -326,7 +326,7 @@ namespace POGContentLib.Core
             var result = new Dictionary<string, MtlEntry>(StringComparer.Ordinal);
             if (!File.Exists(path))
             {
-                MelonLogger.Warning($"[POGContentLib] MTL not found next to the OBJ: {path} — using default materials.");
+                MelonLogger.Warning($"[POGLib] MTL not found next to the OBJ: {path} — using default materials.");
                 return result;
             }
 

@@ -1,7 +1,7 @@
-// POGContentLib runtime driver. Plays the game from inside, without the mouse, and writes one
+// POGLib runtime driver. Plays the game from inside, without the mouse, and writes one
 // "[DRIVER] ..." log line per step so run.sh can screenshot and grep. Never ship it.
 //
-// Config: <profile>/UserData/POGContentLib/driver.txt, key=value lines (all optional):
+// Config: <profile>/UserData/POGLib/driver.txt, key=value lines (all optional):
 //   slot=2            save slot to start (the last one by default, so slot 0 stays the player's)
 //   stay=20           seconds to stay in the hub after the checks
 //   dump=1            dump every NpcSpawner and ShopLocation in the hub (vanilla slot table)
@@ -19,10 +19,10 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[assembly: MelonInfo(typeof(POGContentLib.RuntimeDriver.Driver), "POGContentLibRuntimeDriver", "0.1.0", "test")]
+[assembly: MelonInfo(typeof(POGLib.RuntimeDriver.Driver), "POGLibRuntimeDriver", "0.1.0", "test")]
 [assembly: MelonGame(null, null)]
 
-namespace POGContentLib.RuntimeDriver
+namespace POGLib.RuntimeDriver
 {
     public class Driver : MelonMod
     {
@@ -45,7 +45,7 @@ namespace POGContentLib.RuntimeDriver
         {
             try
             {
-                var path = System.IO.Path.Combine(MelonLoader.Utils.MelonEnvironment.UserDataDirectory, "POGContentLib", "driver.txt");
+                var path = System.IO.Path.Combine(MelonLoader.Utils.MelonEnvironment.UserDataDirectory, "POGLib", "driver.txt");
                 if (File.Exists(path))
                     foreach (var line in File.ReadAllLines(path))
                     {
@@ -223,9 +223,9 @@ namespace POGContentLib.RuntimeDriver
         // game's result, independent of the library's own bookkeeping.
         void CheckShopRules()
         {
-            var records = POGContentLib.Items.Content.Shops.Slots;
+            var records = POGLib.Items.Content.Shops.Slots;
             Log($"shops: {records.Count} slot record(s)");
-            var items = UnityEngine.Object.FindObjectsOfType<InventoryItem>(true).Where(i => !POGContentLib.Shops.ShopScene.IsTemplate(i.transform)).ToArray();
+            var items = UnityEngine.Object.FindObjectsOfType<InventoryItem>(true).Where(i => !POGLib.Shops.ShopScene.IsTemplate(i.transform)).ToArray();
             foreach (var kv in records.OrderBy(k => k.Key))
             {
                 var rec = kv.Value;
@@ -273,7 +273,7 @@ namespace POGContentLib.RuntimeDriver
             if (_override && Camera.main != null) Camera.main.transform.SetPositionAndRotation(_ovPos, _ovRot);
         }
 
-        bool LookAt(string id) => LookAtTransform(POGContentLib.Shops.ShopScene.FindAnchor(id));
+        bool LookAt(string id) => LookAtTransform(POGLib.Shops.ShopScene.FindAnchor(id));
 
         bool LookAtTransform(Transform target)
         {
@@ -308,7 +308,7 @@ namespace POGContentLib.RuntimeDriver
         {
             foreach (var name in new[] { "ModItem_ShopDemo_GlowBerry", "Item_Bread", "Item_Key", "Item_Diamond" })
             {
-                var it = POGContentLib.Core.GameAssets.FindItemPrefab(name);
+                var it = POGLib.Core.GameAssets.FindItemPrefab(name);
                 if (it == null) { Log($"standing {name}: prefab not found"); continue; }
                 var st = it.m_standingTransform;
                 string grip = "-";
@@ -329,19 +329,19 @@ namespace POGContentLib.RuntimeDriver
 
         bool DevToolsStep()
         {
-            _tools ??= typeof(POGContentLib.Plugin).Assembly.GetType("POGContentLib.Shops.Dev.ShopDevTools");
-            var pref = MelonPreferences.GetEntry<bool>("POGContentLib_ShopTools", "Enabled");
+            _tools ??= typeof(POGLib.Plugin).Assembly.GetType("POGLib.Shops.Dev.ShopDevTools");
+            var pref = MelonPreferences.GetEntry<bool>("POGLib_ShopTools", "Enabled");
             string target = _cfg.TryGetValue("devslot", out var t) ? t : null;
             switch (_dev++)
             {
                 case 0:
                     pref.Value = true;
                     Call("SetMode", ModeValue("Aim"));
-                    Log($"devtools: aim mode, draft mod {((POGContentLib.Shops.Model.ShopFile)GetField("_draft"))?.Mod}");
+                    Log($"devtools: aim mode, draft mod {((POGLib.Shops.Model.ShopFile)GetField("_draft"))?.Mod}");
                     _next = Time.unscaledTime + 1f; return false;
                 case 1:
                 {
-                    var slot = POGContentLib.Shops.ShopScene.FindSlot(target);
+                    var slot = POGLib.Shops.ShopScene.FindSlot(target);
                     if (slot == null) { Log($"devtools: slot '{target}' not found"); _dev = 5; return false; }
                     var holder = slot.m_itemHolder != null ? slot.m_itemHolder : slot.transform;
                     var keeper = slot.m_shopKeeper != null ? slot.m_shopKeeper.transform : slot.transform;
@@ -376,13 +376,13 @@ namespace POGContentLib.RuntimeDriver
                 {
                     string status = (string)Call("Save");
                     Log($"devtools: Save -> {status}");
-                    var draft = (POGContentLib.Shops.Model.ShopFile)GetField("_draft");
-                    string path = System.IO.Path.Combine(POGContentLib.Shops.ShopsPlugin.UserShopsDirectory, draft.Mod + ".pogshop.json");
+                    var draft = (POGLib.Shops.Model.ShopFile)GetField("_draft");
+                    string path = System.IO.Path.Combine(POGLib.Shops.ShopsPlugin.UserShopsDirectory, draft.Mod + ".pogshop.json");
                     if (System.IO.File.Exists(path))
                     {
                         foreach (var line in System.IO.File.ReadAllLines(path)) Log("  saved| " + line);
                         System.IO.File.Delete(path);
-                        POGContentLib.Shops.ShopsPlugin.Instance.Reload();
+                        POGLib.Shops.ShopsPlugin.Instance.Reload();
                         Log("devtools: test file removed");
                     }
                     _next = Time.unscaledTime + 1f; return false;
@@ -420,10 +420,10 @@ namespace POGContentLib.RuntimeDriver
                     _next = Time.unscaledTime + 2f; return false;
                 case 2:
                 {
-                    foreach (var sp in POGContentLib.Shops.ShopScene.SellersInLoadedScenes())
-                        Log($"dungeon: seller {POGContentLib.Shops.ShopScene.SellerId(sp)} root {sp.transform.root.name} slots {sp.m_itemsForSale.Length}");
+                    foreach (var sp in POGLib.Shops.ShopScene.SellersInLoadedScenes())
+                        Log($"dungeon: seller {POGLib.Shops.ShopScene.SellerId(sp)} root {sp.transform.root.name} slots {sp.m_itemsForSale.Length}");
                     CheckShopRules();
-                    var mine = POGContentLib.Items.Content.Shops.Slots.Values.Where(r => r.SlotId.Contains("#")).OrderBy(r => r.SlotId).ToList();
+                    var mine = POGLib.Items.Content.Shops.Slots.Values.Where(r => r.SlotId.Contains("#")).OrderBy(r => r.SlotId).ToList();
                     foreach (var r in mine) Log($"dungeon: mod merchant slot {r.SlotId} picked {r.Picked}");
                     if (Checks.Enabled) Checks.MerchantChecks(mine);
                     if (mine.Count > 0 && mine[0].Slot != null && LookAtTransform(mine[0].Slot.transform)) Log("shot merchant");
@@ -433,8 +433,8 @@ namespace POGContentLib.RuntimeDriver
                 case 3:
                 {
                     _override = false;
-                    _tools ??= typeof(POGContentLib.Plugin).Assembly.GetType("POGContentLib.Shops.Dev.ShopDevTools");
-                    MelonPreferences.GetEntry<bool>("POGContentLib_ShopTools", "Enabled").Value = true;
+                    _tools ??= typeof(POGLib.Plugin).Assembly.GetType("POGLib.Shops.Dev.ShopDevTools");
+                    MelonPreferences.GetEntry<bool>("POGLib_ShopTools", "Enabled").Value = true;
                     Call("SetMode", ModeValue("Aim"));
                     SetField("_freeze", true);
                     var round = Il2CppGame.Gameplay.GameMode_Round.Instance;
@@ -457,7 +457,7 @@ namespace POGContentLib.RuntimeDriver
                     float t3 = round != null ? round.ElapsedGameTime : -1;
                     Log($"dungeon: after 8 s running, elapsed {t3:F1} (change {t3 - _t1:F2})");
                     try { Call("SetMode", ModeValue("Off")); } catch { }
-                    MelonPreferences.GetEntry<bool>("POGContentLib_ShopTools", "Enabled").Value = false;
+                    MelonPreferences.GetEntry<bool>("POGLib_ShopTools", "Enabled").Value = false;
                     // Save writes every setting: put the test value back first, or it lands in the player's cfg.
                     if (Checks.Enabled) Checks.SetVanillaWeight(10);
                     MelonPreferences.Save();
@@ -479,7 +479,7 @@ namespace POGContentLib.RuntimeDriver
             string scene = SceneManager.GetActiveScene().name;
             if (!_jumpWaiting)
             {
-                _tools ??= typeof(POGContentLib.Plugin).Assembly.GetType("POGContentLib.Shops.Dev.ShopDevTools");
+                _tools ??= typeof(POGLib.Plugin).Assembly.GetType("POGLib.Shops.Dev.ShopDevTools");
                 Call("JumpTo", target);
                 Log($"jump: to {target}; status '{GetField("_status")}'");
                 _jumpWaiting = true; _jumpDeadline = Time.unscaledTime + 90f; _next = Time.unscaledTime + 2f; return false;
@@ -504,16 +504,16 @@ namespace POGContentLib.RuntimeDriver
         {
             try
             {
-                var draft = (POGContentLib.Shops.Model.ShopFile)GetField("_draft");
+                var draft = (POGLib.Shops.Model.ShopFile)GetField("_draft");
                 var sel = (string)GetField("_selected");
                 var def = draft.Slots.First(x => draft.Mod + ":" + x.Id == sel);
-                var templates = typeof(POGContentLib.Plugin).Assembly.GetType("POGContentLib.Shops.SlotTemplates");
+                var templates = typeof(POGLib.Plugin).Assembly.GetType("POGLib.Shops.SlotTemplates");
                 var template = templates.GetMethod("Get", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                    .Invoke(null, new object[] { POGContentLib.Items.Content.Shops.Catalog.ModSlots.Keys.First() }) as ShopLocation;
+                    .Invoke(null, new object[] { POGLib.Items.Content.Shops.Catalog.ModSlots.Keys.First() }) as ShopLocation;
                 if (template == null || def.PriceTag == null) { Log("tagcheck: no template or no priceTag"); return; }
                 var parent = new GameObject("DriverTagCheck"); parent.SetActive(false);
                 var copy = UnityEngine.Object.Instantiate(template.gameObject, parent.transform);
-                var anchor = POGContentLib.Shops.ShopScene.FindAnchor(def.Anchor);
+                var anchor = POGLib.Shops.ShopScene.FindAnchor(def.Anchor);
                 var rootRot = anchor.rotation * Quaternion.Euler(def.Rot[0], def.Rot[1], def.Rot[2]);
                 copy.transform.SetPositionAndRotation(anchor.TransformPoint(new Vector3(def.Pos[0], def.Pos[1], def.Pos[2])), rootRot);
                 var cs = copy.GetComponent<ShopLocation>();

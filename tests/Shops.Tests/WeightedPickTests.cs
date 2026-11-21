@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using POGContentLib.Shops.Model;
+using POGLib.Shops.Model;
 using Xunit;
 
-namespace POGContentLib.Shops.Tests
+namespace POGLib.Shops.Tests
 {
     /// <summary>
     /// The one weighted draw the game uses for slots and merchant variants (ShopRuntime, SellerTemplates).

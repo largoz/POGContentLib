@@ -1,9 +1,9 @@
 using HarmonyLib;
 using Il2Cpp;
-using POGContentLib.Core;
+using POGLib.Core;
 using UnityEngine;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// Items-domain Harmony patches. Same pattern that proved workable on this engine
@@ -72,9 +72,9 @@ namespace POGContentLib.Items
                 if (prefab == null) return;
                 __result = prefab;
                 if (_logged.Add(prefabIdHash))
-                    MelonLoader.MelonLogger.Msg($"[POGContentLib] The game asked for network prefab {prefabIdHash:X8} (a copy of a mod item); answered with {prefab.name}.");
+                    MelonLoader.MelonLogger.Msg($"[POGLib] The game asked for network prefab {prefabIdHash:X8} (a copy of a mod item); answered with {prefab.name}.");
             }
-            catch (System.Exception ex) { MelonLoader.MelonLogger.Warning($"[POGContentLib] GetNetworkPrefab({prefabIdHash:X8}): {ex.GetType().Name}: {ex.Message}"); }
+            catch (System.Exception ex) { MelonLoader.MelonLogger.Warning($"[POGLib] GetNetworkPrefab({prefabIdHash:X8}): {ex.GetType().Name}: {ex.Message}"); }
         }
     }
 }

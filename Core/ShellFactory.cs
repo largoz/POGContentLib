@@ -4,7 +4,7 @@ using MelonLoader;
 using UnityEngine;
 using Unity.Netcode;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Template factory. Under IL2CPP an InventoryItem cannot be created from scratch — a
@@ -76,7 +76,7 @@ namespace POGContentLib.Core
             get
             {
                 if (_templateHolder != null) return _templateHolder;
-                _templateHolder = new GameObject("POGContentLib_ItemTemplates");
+                _templateHolder = new GameObject("POGLib_ItemTemplates");
                 _templateHolder.SetActive(false);
                 UnityEngine.Object.DontDestroyOnLoad(_templateHolder);
                 _templateHolder.hideFlags = HideFlags.HideAndDontSave;
@@ -93,7 +93,7 @@ namespace POGContentLib.Core
                 // Before the game loads its prefab list (main menu) no shell is in memory: expected, retried at
                 // GamePrefabsLoaded. Once the list is loaded a missing shell is a real problem (renamed prefab).
                 if (GamePrefabs.IsLoaded)
-                    MelonLogger.Warning($"[POGContentLib] Shell '{shellName}' is not in the game's network prefab list; items on it cannot be built.");
+                    MelonLogger.Warning($"[POGLib] Shell '{shellName}' is not in the game's network prefab list; items on it cannot be built.");
                 return null;
             }
 
@@ -109,7 +109,7 @@ namespace POGContentLib.Core
             var item = go.GetComponent<InventoryItem>();
             if (item == null)
             {
-                MelonLogger.Error($"[POGContentLib] Shell {shellName} has no InventoryItem; aborting {contentId}.");
+                MelonLogger.Error($"[POGLib] Shell {shellName} has no InventoryItem; aborting {contentId}.");
                 UnityEngine.Object.Destroy(go);
                 return null;
             }
@@ -118,7 +118,7 @@ namespace POGContentLib.Core
             var netObj = go.GetComponent<NetworkObject>();
             if (netObj == null)
             {
-                MelonLogger.Error($"[POGContentLib] Shell {shellName} has no NetworkObject; aborting {contentId}.");
+                MelonLogger.Error($"[POGLib] Shell {shellName} has no NetworkObject; aborting {contentId}.");
                 UnityEngine.Object.Destroy(go);
                 return null;
             }
@@ -134,7 +134,7 @@ namespace POGContentLib.Core
                 if (upgrade != null) UnityEngine.Object.DestroyImmediate(upgrade);
 
             _registry.RegisterPrefab(netObj);
-            MelonLogger.Msg($"[POGContentLib] Built template {go.name} (shell={shellName}, hash={hash:X8}).");
+            MelonLogger.Msg($"[POGLib] Built template {go.name} (shell={shellName}, hash={hash:X8}).");
             return item;
         }
     }

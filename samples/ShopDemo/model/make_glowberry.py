@@ -1,6 +1,6 @@
 # make_glowberry.py <out dir>: writes GlowBerry.obj + GlowBerry.mtl, the ShopDemo sample's own model.
 # A cluster of three glowing berries on a short stem with one leaf, about 8 cm tall, in metres, Y up, the origin
-# at the bottom centre (the same convention as the Ember Lantern model POGContentLib's OBJ loader was built on).
+# at the bottom centre (the same convention as the Ember Lantern model POGLib's OBJ loader was built on).
 import math, os, sys
 
 out = sys.argv[1] if len(sys.argv) > 1 else '.'
@@ -61,7 +61,7 @@ leaf('Leaf')
 
 os.makedirs(out, exist_ok=True)
 with open(os.path.join(out, 'GlowBerry.obj'), 'w') as f:
-    f.write('# GlowBerry: ShopDemo sample model (POGContentLib). Metres, Y up, origin at the bottom centre.\n')
+    f.write('# GlowBerry: ShopDemo sample model (POGLib). Metres, Y up, origin at the bottom centre.\n')
     f.write('mtllib GlowBerry.mtl\no GlowBerry\n')
     for p in V: f.write('v %.5f %.5f %.5f\n' % p)
     for n in VN: f.write('vn %.5f %.5f %.5f\n' % n)

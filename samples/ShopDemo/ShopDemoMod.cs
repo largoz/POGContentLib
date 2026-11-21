@@ -2,12 +2,12 @@ using System.IO;
 using System.Linq;
 using MelonLoader;
 using MelonLoader.Utils;
-using POGContentLib.Items;
+using POGLib.Items;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(ShopDemo.ShopDemoMod), "ShopDemo", "1.0.0", "POGContentLib sample")]
+[assembly: MelonInfo(typeof(ShopDemo.ShopDemoMod), "ShopDemo", "1.0.0", "POGLib sample")]
 [assembly: MelonGame(null, "Pit of Goblin")]
-[assembly: MelonAdditionalDependencies("POGContentLib")]
+[assembly: MelonAdditionalDependencies("POGLib")]
 
 namespace ShopDemo
 {

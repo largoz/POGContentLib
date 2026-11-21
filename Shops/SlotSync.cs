@@ -2,12 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using Il2CppGame.Spawning;
 using MelonLoader;
-using POGContentLib.Core;
-using POGContentLib.Shops.Model;
+using POGLib.Core;
+using POGLib.Shops.Model;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// R1: a mod slot is a copy of the game's own slot prefab (<see cref="SlotTemplates"/>), so it reaches every
@@ -82,12 +82,12 @@ namespace POGContentLib.Shops
             if (nm == null || nm.IsServer || sender != NetworkManager.ServerClientId) return;
             if (!SlotInfo.TryDecode(payload, out var info))
             {
-                if (!_badAnswerReported) MelonLogger.Warning($"[POGContentLib] [Shops] The host described a slot in a form this version cannot read: '{payload}'.");
+                if (!_badAnswerReported) MelonLogger.Warning($"[POGLib] [Shops] The host described a slot in a form this version cannot read: '{payload}'.");
                 _badAnswerReported = true;
                 return;
             }
             var slot = SpawnedSlot(nm, info.NetworkId);
-            if (slot == null) { MelonLogger.Msg($"[POGContentLib] [Shops] {info.SlotId}: the slot left before the host's answer came."); return; }
+            if (slot == null) { MelonLogger.Msg($"[POGLib] [Shops] {info.SlotId}: the slot left before the host's answer came."); return; }
             slot.gameObject.name = ShopScene.ModSlotPrefix + info.SlotId;
             var tag = slot.m_priceTagText != null ? SlotTemplates.TopChildOf(slot.m_priceTagText.transform, slot.transform) : null;
             if (tag != null)
@@ -96,7 +96,7 @@ namespace POGContentLib.Shops
                 if (info.TagRot != null) tag.localEulerAngles = new Vector3(info.TagRot[0], info.TagRot[1], info.TagRot[2]);
                 if (info.TagHidden) tag.gameObject.SetActive(false);
             }
-            MelonLogger.Msg($"[POGContentLib] [Shops] {info.SlotId}: shown as the host placed it (price tag {(tag == null ? "not found" : info.TagHidden ? "hidden" : "posed")}).");
+            MelonLogger.Msg($"[POGLib] [Shops] {info.SlotId}: shown as the host placed it (price tag {(tag == null ? "not found" : info.TagHidden ? "hidden" : "posed")}).");
         }
 
         // ---- host ----

@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Il2CppGame.Spawning;
 using MelonLoader;
-using POGContentLib.Core;
-using POGContentLib.Shops.Model;
+using POGLib.Core;
+using POGLib.Shops.Model;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Shops
+namespace POGLib.Shops
 {
     /// <summary>
     /// The host's template per mod slot (R1, 2026-11-19): a copy of the game's own standalone slot prefab
@@ -40,7 +40,7 @@ namespace POGContentLib.Shops
             var donor = FindDonor(null);
             if (donor == null)
             {
-                MelonLogger.Msg("[POGContentLib] [Shops] No vanilla shop slot in memory yet to copy for new slots (will retry on the next scene).");
+                MelonLogger.Msg("[POGLib] [Shops] No vanilla shop slot in memory yet to copy for new slots (will retry on the next scene).");
                 return;
             }
             EnsureHolder();
@@ -50,7 +50,7 @@ namespace POGContentLib.Shops
                 var t = Build(src, s);
                 if (t != null) _built[s.FullId] = t;
             }
-            MelonLogger.Msg($"[POGContentLib] [Shops] Slot templates ready: {_built.Count} (copied from the game's '{donor.gameObject.name}', network hash {donor.GetComponent<NetworkObject>().GlobalObjectIdHash}; nothing new to register).");
+            MelonLogger.Msg($"[POGLib] [Shops] Slot templates ready: {_built.Count} (copied from the game's '{donor.gameObject.name}', network hash {donor.GetComponent<NetworkObject>().GlobalObjectIdHash}; nothing new to register).");
         }
 
         /// <summary>A ShopLocation from a loaded prefab asset (not a scene instance), preferring a named one.</summary>
@@ -74,7 +74,7 @@ namespace POGContentLib.Shops
         private static void EnsureHolder()
         {
             if (_holder != null) return;
-            _holder = new GameObject("POGContentLib_ShopTemplates");
+            _holder = new GameObject("POGLib_ShopTemplates");
             _holder.SetActive(false);
             Object.DontDestroyOnLoad(_holder);
             _holder.hideFlags = HideFlags.HideAndDontSave;

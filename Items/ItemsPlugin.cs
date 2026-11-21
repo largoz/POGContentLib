@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using Il2Cpp;
 using Il2CppEntities;
 using MelonLoader;
-using POGContentLib.Core;
+using POGLib.Core;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>Use context. owner runs host-authoritative.</summary>
     public sealed class UseContext
@@ -78,9 +78,9 @@ namespace POGContentLib.Items
             else if (!string.IsNullOrEmpty(def.IconFile))
             {
                 try { icon = AssetLoader.LoadPngAsSprite(def.IconFile); }
-                catch (Exception ex) { MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: icon file '{def.IconFile}': {ex.Message}"); }
+                catch (Exception ex) { MelonLogger.Warning($"[POGLib.Items] {def.ContentId}: icon file '{def.IconFile}': {ex.Message}"); }
                 if (icon != null)
-                    MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: icon from '{System.IO.Path.GetFileName(def.IconFile)}' ({icon.texture.width}x{icon.texture.height}).");
+                    MelonLogger.Msg($"[POGLib.Items] {def.ContentId}: icon from '{System.IO.Path.GetFileName(def.IconFile)}' ({icon.texture.width}x{icon.texture.height}).");
             }
             if (icon != null) _icons[full] = icon;
             return icon;
@@ -96,14 +96,14 @@ namespace POGContentLib.Items
         {
             if (string.IsNullOrEmpty(handlerId) || handler == null) return;
             _handlers[handlerId] = handler;
-            MelonLogger.Msg($"[POGContentLib.Items] Use handler: {handlerId}");
+            MelonLogger.Msg($"[POGLib.Items] Use handler: {handlerId}");
         }
 
         public void RegisterItem(ModItemDefinition def)
         {
             if (def == null || string.IsNullOrEmpty(def.ModId) || string.IsNullOrEmpty(def.ContentId))
             {
-                MelonLogger.Error("[POGContentLib.Items] Invalid ModItemDefinition.");
+                MelonLogger.Error("[POGLib.Items] Invalid ModItemDefinition.");
                 return;
             }
             if (!CoreServices.Content.RegisterDefinition(def)) return;
@@ -199,7 +199,7 @@ namespace POGContentLib.Items
             var icon = Instance?.IconFor(def);
             if (icon != null) item.m_itemIcon = icon;
             else if (def.Visual?.Kind == ItemVisualKind.ObjFile)
-                MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: a model of its own but no icon (Icon, IconSpriteName or IconFile): it shows the shell's icon.");
+                MelonLogger.Warning($"[POGLib.Items] {def.ContentId}: a model of its own but no icon (Icon, IconSpriteName or IconFile): it shows the shell's icon.");
 
             // Journal: the tab and whether it is listed (the entry itself is added by JournalEntries).
             item.m_journalGroup = JournalGroupOf(def);
@@ -237,11 +237,11 @@ namespace POGContentLib.Items
                 try
                 {
                     new UsableCapability().Attach(item);
-                    MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: made usable (ActiveItem_ReadyItem added).");
+                    MelonLogger.Msg($"[POGLib.Items] {def.ContentId}: made usable (ActiveItem_ReadyItem added).");
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: could not make usable: {ex.Message}");
+                    MelonLogger.Warning($"[POGLib.Items] {def.ContentId}: could not make usable: {ex.Message}");
                 }
             }
 
@@ -252,11 +252,11 @@ namespace POGContentLib.Items
                 try
                 {
                     cap.Attach(item);
-                    MelonLogger.Msg($"[POGContentLib.Items] Capability '{cap.Name}' attached to {def.ContentId} (EXPERIMENTAL).");
+                    MelonLogger.Msg($"[POGLib.Items] Capability '{cap.Name}' attached to {def.ContentId} (EXPERIMENTAL).");
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"[POGContentLib.Items] Capability '{cap.Name}' failed on {def.ContentId}: {ex.Message}");
+                    MelonLogger.Warning($"[POGLib.Items] Capability '{cap.Name}' failed on {def.ContentId}: {ex.Message}");
                 }
             }
         }
@@ -294,7 +294,7 @@ namespace POGContentLib.Items
                 // them back, or the game has nothing to spawn.
                 source.m_spawnAmount = 1;
                 source.m_spawnChance = 1f;
-                MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId} leaves behind {targetMod}:{targetContent} when used up.");
+                MelonLogger.Msg($"[POGLib.Items] {def.ContentId} leaves behind {targetMod}:{targetContent} when used up.");
             }
         }
 
@@ -337,7 +337,7 @@ namespace POGContentLib.Items
                                     ItemVisuals.HideSpeakingStoneVfx(go);
                                 }
                             }
-                            else MelonLogger.Warning($"[POGContentLib.Items] Visual source not found: {def.Visual.SourcePrefabName}");
+                            else MelonLogger.Warning($"[POGLib.Items] Visual source not found: {def.Visual.SourcePrefabName}");
                             break;
 
                         case ItemVisualKind.ObjFile:
@@ -351,7 +351,7 @@ namespace POGContentLib.Items
                                 // The hitbox follows the model; otherwise the item keeps the shell's collider.
                                 ItemVisuals.ApplyColliders(go, model.CollisionMeshes, model.Mesh);
                             }
-                            else MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: OBJ visual failed, keeping the shell mesh.");
+                            else MelonLogger.Warning($"[POGLib.Items] {def.ContentId}: OBJ visual failed, keeping the shell mesh.");
                             break;
 
                         case ItemVisualKind.Png when def.Icon == null:
@@ -370,7 +370,7 @@ namespace POGContentLib.Items
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib.Items] Visual failed for {def.ContentId}: {ex.Message}");
+                MelonLogger.Warning($"[POGLib.Items] Visual failed for {def.ContentId}: {ex.Message}");
             }
         }
 
@@ -386,7 +386,7 @@ namespace POGContentLib.Items
             var v = def.Visual;
             if (string.IsNullOrEmpty(v.Path) || string.IsNullOrEmpty(v.AssetName))
             {
-                MelonLogger.Warning($"[POGContentLib.Items] Bundle visual for {def.ContentId} needs both a bundle path and an asset name.");
+                MelonLogger.Warning($"[POGLib.Items] Bundle visual for {def.ContentId} needs both a bundle path and an asset name.");
                 return;
             }
 
@@ -396,7 +396,7 @@ namespace POGContentLib.Items
             var prefab = CoreServices.Assets.LoadAsset<GameObject>(bundle, v.AssetName);
             if (prefab == null)
             {
-                MelonLogger.Error($"[POGContentLib.Items] Asset '{v.AssetName}' not found in bundle '{v.Path}'.");
+                MelonLogger.Error($"[POGLib.Items] Asset '{v.AssetName}' not found in bundle '{v.Path}'.");
                 return;
             }
 
@@ -404,7 +404,7 @@ namespace POGContentLib.Items
             if (visual == null) return;
 
             if (v.RepairShaders) ItemVisuals.RepairBundleShaders(visual);
-            MelonLogger.Msg($"[POGContentLib.Items] Custom mesh '{v.AssetName}' applied to {def.ContentId} (EXPERIMENTAL).");
+            MelonLogger.Msg($"[POGLib.Items] Custom mesh '{v.AssetName}' applied to {def.ContentId} (EXPERIMENTAL).");
         }
 
         // ---- Use flow (host-authoritative) ----
@@ -424,18 +424,18 @@ namespace POGContentLib.Items
             var handle = item.GetComponent<ModItemHandle>();
             if (handle != null && handle.IsConsumed)
             {
-                MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: already consumed.");
+                MelonLogger.Msg($"[POGLib.Items] {def.ContentId}: already consumed.");
                 return;
             }
 
             if (string.IsNullOrEmpty(def.UseHandlerId))
             {
-                MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: no UseHandlerId set — nothing to run.");
+                MelonLogger.Msg($"[POGLib.Items] {def.ContentId}: no UseHandlerId set — nothing to run.");
                 return;
             }
             if (!_handlers.TryGetValue(def.UseHandlerId, out var handler))
             {
-                MelonLogger.Warning($"[POGContentLib.Items] {def.ContentId}: use handler " +
+                MelonLogger.Warning($"[POGLib.Items] {def.ContentId}: use handler " +
                                     $"'{def.UseHandlerId}' is not registered.");
                 return;
             }
@@ -446,7 +446,7 @@ namespace POGContentLib.Items
             // Host-authoritative: a client would route the request via HostBridge (v2). For now, host-only.
             if (!isHost)
             {
-                MelonLogger.Msg("[POGContentLib.Items] Use on client deferred (HostBridge RPC is a v2 feature).");
+                MelonLogger.Msg("[POGLib.Items] Use on client deferred (HostBridge RPC is a v2 feature).");
                 return;
             }
 
@@ -454,21 +454,21 @@ namespace POGContentLib.Items
             if (!handler(item, owner, ctx))
             {
                 // The handler declined (e.g. "the bucket is moving") — the use is NOT spent.
-                MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: handler declined; use not spent.");
+                MelonLogger.Msg($"[POGLib.Items] {def.ContentId}: handler declined; use not spent.");
                 return;
             }
 
             if (handle != null)
             {
                 handle.UsesRemaining--;
-                MelonLogger.Msg($"[POGContentLib.Items] {def.ContentId}: used, {handle.UsesRemaining} use(s) left.");
+                MelonLogger.Msg($"[POGLib.Items] {def.ContentId}: used, {handle.UsesRemaining} use(s) left.");
 
                 if (handle.UsesRemaining <= 0 && def.Consumable)
                 {
                     handle.IsConsumed = true;
                     try { item.ConsumeItem_Owner(); }
                     catch (Exception ex)
-                    { MelonLogger.Warning($"[POGContentLib.Items] Consume failed: {ex.Message}"); }
+                    { MelonLogger.Warning($"[POGLib.Items] Consume failed: {ex.Message}"); }
                 }
                 else
                 {
@@ -477,7 +477,7 @@ namespace POGContentLib.Items
                     // its own to do so — so the next click was swallowed. Close the action ourselves.
                     try { item.EndPrimaryAction(); }
                     catch (Exception ex)
-                    { MelonLogger.Warning($"[POGContentLib.Items] EndPrimaryAction failed: {ex.Message}"); }
+                    { MelonLogger.Warning($"[POGLib.Items] EndPrimaryAction failed: {ex.Message}"); }
                 }
             }
         }

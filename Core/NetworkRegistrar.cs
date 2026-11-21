@@ -4,7 +4,7 @@ using MelonLoader;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Registers mod prefabs with NGO. Called BEFORE the session starts (ForceSamePrefabs=true
@@ -24,7 +24,7 @@ namespace POGContentLib.Core
         {
             if (!_registered) return;
             _registered = false;
-            MelonLogger.Msg("[POGContentLib] Network registration reset (session stopped).");
+            MelonLogger.Msg("[POGLib] Network registration reset (session stopped).");
         }
 
         /// <summary>Register all mod prefabs. Idempotent within one session.</summary>
@@ -34,7 +34,7 @@ namespace POGContentLib.Core
             var nm = NetworkManager.Singleton;
             if (nm == null || nm.NetworkConfig == null)
             {
-                MelonLogger.Warning("[POGContentLib] RegisterAll: NetworkManager/Config not ready.");
+                MelonLogger.Warning("[POGLib] RegisterAll: NetworkManager/Config not ready.");
                 return;
             }
 
@@ -55,7 +55,7 @@ namespace POGContentLib.Core
             }
 
             _registered = true;
-            MelonLogger.Msg($"[POGContentLib] Network prefabs registered: {ok} ok, {fail} failed" +
+            MelonLogger.Msg($"[POGLib] Network prefabs registered: {ok} ok, {fail} failed" +
                             (already > 0 ? $", {already} already registered from an earlier session." : "."));
         }
 
@@ -83,12 +83,12 @@ namespace POGContentLib.Core
                 }
                 if (IsHashTaken(nm, resolved))
                 {
-                    MelonLogger.Error($"[POGContentLib] Could not find free hash for {prefab.name} (base {hash:X8}).");
+                    MelonLogger.Error($"[POGLib] Could not find free hash for {prefab.name} (base {hash:X8}).");
                     return RegisterResult.Failed;
                 }
                 if (resolved != hash)
                 {
-                    MelonLogger.Warning($"[POGContentLib] Hash collision {hash:X8} -> re-salted {resolved:X8} for {prefab.name}.");
+                    MelonLogger.Warning($"[POGLib] Hash collision {hash:X8} -> re-salted {resolved:X8} for {prefab.name}.");
                     prefab.GlobalObjectIdHash = resolved;
                     _registry.Rekey(hash, resolved);
                     hash = resolved;
@@ -99,14 +99,14 @@ namespace POGContentLib.Core
             try { nm.AddNetworkPrefab(prefab.gameObject); }
             catch (Exception ex)
             {
-                MelonLogger.Error($"[POGContentLib] AddNetworkPrefab threw for {prefab.name}: {ex.Message}");
+                MelonLogger.Error($"[POGLib] AddNetworkPrefab threw for {prefab.name}: {ex.Message}");
                 return RegisterResult.Failed;
             }
 
             // 3) Post-verify (do not trust void/log): is the hash actually in the table.
             if (!IsHashTaken(nm, hash))
             {
-                MelonLogger.Error($"[POGContentLib] Post-verify FAILED: {prefab.name} ({hash:X8}) not registered.");
+                MelonLogger.Error($"[POGLib] Post-verify FAILED: {prefab.name} ({hash:X8}) not registered.");
                 return RegisterResult.Failed;
             }
             return RegisterResult.Registered;

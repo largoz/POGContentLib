@@ -4,7 +4,7 @@ using MelonLoader;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// The game's own list of network prefabs. Since the 2026-11-14 update the game keeps its prefabs in
@@ -43,7 +43,7 @@ namespace POGContentLib.Core
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning($"[POGContentLib] Could not make the game load its network prefab list: {ex.GetType().Name}: {ex.Message}");
+                MelonLogger.Warning($"[POGLib] Could not make the game load its network prefab list: {ex.GetType().Name}: {ex.Message}");
             }
             return IsLoaded;
         }

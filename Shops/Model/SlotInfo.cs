@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 
-namespace POGContentLib.Shops.Model
+namespace POGLib.Shops.Model
 {
     /// <summary>
     /// What a client needs to show a mod slot that the host spawned from the game's own slot prefab (R1): the game

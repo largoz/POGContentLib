@@ -2,14 +2,14 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using MelonLoader;
-using POGContentLib.Core;
+using POGLib.Core;
 
-namespace POGContentLib.Items
+namespace POGLib.Items
 {
     /// <summary>
     /// Public item-registration facade for content packs.
     /// A content mod calls Content.Items.Register(...) / RegisterUseHandler(...) in its own
-    /// OnInitializeMelon (which runs AFTER POGContentLib thanks to MelonPriority).
+    /// OnInitializeMelon (which runs AFTER POGLib thanks to MelonPriority).
     /// </summary>
     public sealed class ItemsApi
     {
@@ -18,7 +18,7 @@ namespace POGContentLib.Items
         private bool Guard()
         {
             if (Plugin != null) return true;
-            MelonLogger.Error("[POGContentLib] Content.Items used before POGContentLib booted.");
+            MelonLogger.Error("[POGLib] Content.Items used before POGLib booted.");
             return false;
         }
 
@@ -54,7 +54,7 @@ namespace POGContentLib.Items
         public static ParityApi Parity { get; } = new ParityApi();
         /// <summary>
         /// The assemblies (simple names, e.g. "ShopDemo") that registered network content through this library, plus
-        /// POGContentLib itself once any did. Every player needs these mods, with the same content: a mod-list check
+        /// POGLib itself once any did. Every player needs these mods, with the same content: a mod-list check
         /// (such as POG Mod Check) reads this to tell "required for everyone" from "own only".
         /// </summary>
         public static IReadOnlyCollection<string> ContentAssemblies => ContentOwners.Assemblies;

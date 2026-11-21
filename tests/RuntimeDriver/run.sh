@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Run POGContentLib in the real game (Steam + the Gale profile) under the runtime driver, then clean up.
+# Run POGLib in the real game (Steam + the Gale profile) under the runtime driver, then clean up.
 #
 #   run.sh <out dir> [extra DLL or folder to deploy into Mods/ ...]
 #
-# Deploys: the library build (../../bin/Release/net6.0/POGContentLib.dll), the driver, the extras, and
-# <out dir>/driver.txt as UserData/POGContentLib/driver.txt when it exists. Screenshots the window ~2 s
+# Deploys: the library build (../../bin/Release/net6.0/POGLib.dll), the driver, the extras, and
+# <out dir>/driver.txt as UserData/POGLib/driver.txt when it exists. Screenshots the window ~2 s
 # after every "[DRIVER] shot <name>" log line, stops at "[DRIVER] done", closes the game and removes
 # everything it deployed. Prints the library's and driver's log lines.
 # Ask/announce before running: the game takes the screen for a few minutes (see _research/TESTING.md §0).
@@ -15,7 +15,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 OUT="$1"; shift
 LOG="$PROFILE/MelonLoader/Latest.log"
 MODS="$PROFILE/Mods"
-CFG="$PROFILE/UserData/POGContentLib/driver.txt"
+CFG="$PROFILE/UserData/POGLib/driver.txt"
 TIMEOUT="${POG_TIMEOUT:-420}"
 START_WAIT="${POG_START_WAIT:-300}"
 
@@ -60,20 +60,20 @@ cleanup() {
   rm -f "$CFG"
   for f in "${test_shops[@]}"; do rm -f "$f"; done
   # The folders made for the config and the test shops go too, only when nothing else is in them.
-  rmdir "$PROFILE/UserData/POGContentLib/Shops" "$PROFILE/UserData/POGContentLib" 2>/dev/null
+  rmdir "$PROFILE/UserData/POGLib/Shops" "$PROFILE/UserData/POGLib" 2>/dev/null
   echo "Mods/ now:"; ls "$MODS"
 }
 trap cleanup EXIT
 
-deploy "$ROOT/bin/Release/net6.0/POGContentLib.dll"
-deploy "$HERE/bin/Release/net6.0/POGContentLibRuntimeDriver.dll"
+deploy "$ROOT/bin/Release/net6.0/POGLib.dll"
+deploy "$HERE/bin/Release/net6.0/POGLibRuntimeDriver.dll"
 for extra in "$@"; do deploy "$extra"; done
 if [ -f "$OUT/driver.txt" ]; then mkdir -p "$(dirname "$CFG")"; cp "$OUT/driver.txt" "$CFG"; fi
-# Test shop rules: <out dir>/shops/*.json -> UserData/POGContentLib/Shops/ (removed afterwards).
-SHOPS_DIR="$PROFILE/UserData/POGContentLib/Shops"
+# Test shop rules: <out dir>/shops/*.json -> UserData/POGLib/Shops/ (removed afterwards).
+SHOPS_DIR="$PROFILE/UserData/POGLib/Shops"
 test_shops=()
 if [ -d "$OUT/shops" ]; then mkdir -p "$SHOPS_DIR"; for f in "$OUT"/shops/*.json; do cp "$f" "$SHOPS_DIR/"; test_shops+=("$SHOPS_DIR/$(basename "$f")"); done; fi
-sha256sum "$ROOT/bin/Release/net6.0/POGContentLib.dll" "$MODS/POGContentLib.dll" | awk '{print $1}' | uniq -c
+sha256sum "$ROOT/bin/Release/net6.0/POGLib.dll" "$MODS/POGLib.dll" | awk '{print $1}' | uniq -c
 
 T0=$(date +%s)
 # POG_LAUNCH_ARGS: extra game arguments, e.g. "--melonloader.hideconsole" (split on spaces).
@@ -108,7 +108,7 @@ cp "$LOG" "$OUT/Latest.log"
 # Unity's own log: exceptions inside game code (a coroutine, OnNetworkSpawn) appear only there.
 PLAYER_LOG="/run/media/tim/Games/SteamLibrary/steamapps/compatdata/3253530/pfx/drive_c/users/steamuser/AppData/LocalLow/Friendly Foe/Pit of Goblin/Player.log"
 [ -f "$PLAYER_LOG" ] && [ "$(stat -c %Y "$PLAYER_LOG")" -ge "$T0" ] && cp "$PLAYER_LOG" "$OUT/Player.log"
-grep -a -E "\[DRIVER\]|POGContentLib|\[Shops\]|ERROR|Exception" "$LOG" | grep -a -v "\[DRIVER\] G2 prefab" | cut -c1-300
+grep -a -E "\[DRIVER\]|POGLib|\[Shops\]|ERROR|Exception" "$LOG" | grep -a -v "\[DRIVER\] G2 prefab" | cut -c1-300
 
 # Expectations (<out dir>/expect.txt, see expect.sh) and the driver's own FAIL lines.
 # Exit status = number of failures (0 = all passed).

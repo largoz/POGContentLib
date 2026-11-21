@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MelonLoader;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Registry of domain plugins + stage driver. The entry point (Plugin.cs) calls Boot()
@@ -20,11 +20,11 @@ namespace POGContentLib.Core
             if (plugin == null) return;
             if (_booted)
             {
-                MelonLogger.Warning($"[POGContentLib] Cannot add plugin '{plugin.Name}' after Boot.");
+                MelonLogger.Warning($"[POGLib] Cannot add plugin '{plugin.Name}' after Boot.");
                 return;
             }
             _plugins.Add(plugin);
-            MelonLogger.Msg($"[POGContentLib] Registered plugin: {plugin.Name} v{plugin.Version}");
+            MelonLogger.Msg($"[POGLib] Registered plugin: {plugin.Name} v{plugin.Version}");
         }
 
         /// <summary>Build the graph from all plugins and run the Boot stage.</summary>
@@ -39,12 +39,12 @@ namespace POGContentLib.Core
                 try { plugin.Build(_graph); }
                 catch (Exception ex)
                 {
-                    MelonLogger.Error($"[POGContentLib] Plugin '{plugin.Name}' Build() threw: {ex}");
+                    MelonLogger.Error($"[POGLib] Plugin '{plugin.Name}' Build() threw: {ex}");
                 }
             }
 
             _graph.RunStage(PluginStage.Boot);
-            MelonLogger.Msg($"[POGContentLib] Boot complete ({_plugins.Count} plugin(s)).");
+            MelonLogger.Msg($"[POGLib] Boot complete ({_plugins.Count} plugin(s)).");
         }
 
         /// <summary>Run a lifecycle stage (SceneLoaded / BeforeSessionStart / SessionStop).</summary>

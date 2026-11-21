@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Threading;
-using POGContentLib.Shops.Model;
+using POGLib.Shops.Model;
 using Xunit;
 
-namespace POGContentLib.Shops.Tests
+namespace POGLib.Shops.Tests
 {
     public class SlotInfoTests
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>Which assembly registered which content (for <c>Content.ContentAssemblies</c>).</summary>
     internal static class ContentOwners

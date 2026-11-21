@@ -3,7 +3,7 @@ using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 
-namespace POGContentLib.Core
+namespace POGLib.Core
 {
     /// <summary>
     /// Save/load safety. Confirmed by decompilation (CONTENT_FRAMEWORK_RESEARCH.md §2.5):
@@ -24,7 +24,7 @@ namespace POGContentLib.Core
         {
             if (__exception == null) return null;
             MelonLogger.Warning(
-                "[POGContentLib] SaveGuard: FromContainerData threw (likely unknown item hash — " +
+                "[POGLib] SaveGuard: FromContainerData threw (likely unknown item hash — " +
                 $"missing content pack?). Skipping this reward chest. {__exception.GetType().Name}");
             return null; // swallow: don't let the exception abort LoadRewardChests entirely
         }
